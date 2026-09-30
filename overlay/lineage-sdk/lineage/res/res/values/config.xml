@@ -97,12 +97,6 @@
     <!-- LiveDisplay -->
     <bool name="config_enableLiveDisplay">true</bool>
 
-    <!-- Kills GPU performance, so we block it -->
-    <integer name="config_dayColorTemperature">6500</integer>
-    <integer name="config_nightColorTemperature">6500</integer>
-    <integer name="config_minColorTemperature">6500</integer>
-    <integer name="config_maxColorTemperature">6500</integer>
-
     <!-- BurnIn protection. This should be enabled on devices that have OLED displays -->
     <bool name="config_enableBurnInProtection">true</bool>
 
