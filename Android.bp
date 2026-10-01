@@ -12,4 +12,3 @@ cc_defaults {
     name: "samsung_header_path_defaults",
     header_libs: ["samsung_device_headers"],
 }
-

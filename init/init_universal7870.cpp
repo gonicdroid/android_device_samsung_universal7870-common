@@ -1,6 +1,6 @@
 /*
    Copyright (c) 2016, The Linux Foundation. All rights reserved.
-   Copyright (c) 2017-2020, The LineageOS Project. All rights reserved.
+   Copyright (c) 2017-2026, The LineageOS Project. All rights reserved.
 
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are
@@ -110,7 +110,26 @@ void vendor_load_properties()
         set_ro_product_prop("model", "SM-J710MN");
         set_ro_product_prop("device", "j7xelte");
         set_ro_product_prop("name", "j7xelteub");
-    } else {
+    }  else if (bootloader.find("J701MT") == 0) {
+        /* SM-J701MT */
+        property_override("ro.build.description", "j7veltedtvvj-user 8.1.0 M1AJQ J701MTVJU6BSD1 release-keys", false);
+        set_ro_product_prop("model", "SM-J701MT");
+        set_ro_product_prop("device", "j7velte");
+        set_ro_product_prop("name", "j7veltedtvvj");
+    } else if (bootloader.find("J701M") == 0) {
+        /* SM-J701M */
+        property_override("ro.build.description", "j7velteub-user 8.1.0 M1AJQ J701MUBU6BSD3 release-keys", false);
+        set_ro_product_prop("model", "SM-J701M");
+        set_ro_product_prop("device", "j7velte");
+        set_ro_product_prop("name", "j7velteub");
+    } else if (bootloader.find("J701F") == 0) {
+        /* SM-J701F */
+        property_override("ro.build.description", "j7veltedx-user 8.1.0 M1AJQ J701FXXU6BSD1 release-keys", false);
+        set_ro_product_prop("model", "SM-J701F");
+        set_ro_product_prop("device", "j7velte");
+        set_ro_product_prop("name", "j7veltedx");
+    }
+    else {
         /* J710F if not found*/
         property_override("ro.build.description", "j7xeltexx-user 8.1.0 M1AJQ J710FXXS6CTC1 release-keys", false);
         set_ro_product_prop("model", "SM-J710F");

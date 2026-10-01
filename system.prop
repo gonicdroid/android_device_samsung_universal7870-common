@@ -6,7 +6,7 @@ ro.lmk.use_minfree_levels=true
 ro.lmk.use_psi=false
 
 # Dev
-persist.sys.usb.config=adb
+persist.sys.usb.config=mtp,adb
 ro.adb.secure=0
 ro.secure=0
 ro.debuggable=1

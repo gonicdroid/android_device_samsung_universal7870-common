@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2017 The LineageOS Project
+# Copyright (C) 2026 The LineageOS Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,13 +14,10 @@
 # limitations under the License.
 #
 
-COMMON_PATH := device/samsung/j7xelte
+COMMON_PATH := device/samsung/universal7870-common
 
 # Include path
 TARGET_SPECIFIC_HEADER_PATH := $(COMMON_PATH)/include
-
-# Inherit proprietary vendor blobs
-include vendor/samsung/j7xelte/BoardConfigVendor.mk
 
 # Architecture
 TARGET_ARCH := arm
@@ -50,7 +47,6 @@ BOARD_HAVE_SAMSUNG_WIFI          := true
 BOARD_HAVE_BLUETOOTH := true
 BOARD_HAVE_BLUETOOTH_BCM := true
 BOARD_HAVE_SAMSUNG_BLUETOOTH := true
-BOARD_BLUETOOTH_BDROID_BUILDCFG_INCLUDE_DIR := $(COMMON_PATH)/configs/bluetooth
 #BOARD_CUSTOM_BT_CONFIG := $(COMMON_PATH)/configs/bluetooth/libbt_vndcfg.txt
 
 # Boot image
@@ -78,7 +74,7 @@ DEVICE_MANIFEST_FILE := $(COMMON_PATH)/manifest.xml
 DEVICE_MATRIX_FILE := $(COMMON_PATH)/compatibility_matrix.xml
 
 # Init
-TARGET_INIT_VENDOR_LIB := libinit_j7xelte
+TARGET_INIT_VENDOR_LIB := libinit_universal7870
 
 # Kernel
 TARGET_KERNEL_ARCH := arm64
@@ -89,12 +85,10 @@ KERNEL_TOOLCHAIN := $(shell pwd)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-a
 TARGET_KERNEL_CROSS_COMPILE_PREFIX := aarch64-linux-android-
 TARGET_USES_64_BIT_BINDER := true
 
-
 # LIBHWJPEG
 TARGET_USES_GTAXL_LIBHWJPEG := false
 TARGET_USES_HWC2ON1ADAPTER := true
 TARGET_USES_HWC2 := true
-
 
 # Lineage Health
 TARGET_HEALTH_CHARGING_CONTROL_CHARGING_PATH := /sys/class/power_supply/battery/batt_slate_mode
@@ -121,7 +115,8 @@ TARGET_NO_BOOTLOADER := true
 TARGET_NO_RADIOIMAGE := true
 
 # Properties
-TARGET_SYSTEM_PROP := $(COMMON_PATH)/system.prop
+TARGET_SYSTEM_PROP += $(COMMON_PATH)/system.prop
+TARGET_VENDOR_PROP += $(COMMON_PATH)/vendor.prop
 
 # Recovery
 TARGET_RECOVERY_FSTAB := $(COMMON_PATH)/rootdir/recovery.fstab
@@ -132,6 +127,7 @@ TARGET_RELEASETOOLS_EXTENSIONS := $(COMMON_PATH)
 
 # RIL
 TARGET_USES_VND_SECRIL := true
+ENABLE_VENDOR_RIL_SERVICE := true
 
 # Root
 BOARD_ROOT_EXTRA_FOLDERS := efs
@@ -155,21 +151,6 @@ TARGET_COPY_OUT_VENDOR := system/vendor
 # Only needed for signing
 BOARD_AVB_ENABLE := false
 
-DEVICE_PATH := device/samsung/j7xelte
-
-# Kernel
-TARGET_KERNEL_CONFIG := exynos7870-j7xelte_defconfig
-
-# OTA assertions
-TARGET_OTA_ASSERT_DEVICE := j7xelte
-
-# Partitions
-BOARD_SYSTEMIMAGE_PARTITION_SIZE   := 3145728000
-BOARD_USERDATAIMAGE_PARTITION_SIZE := 10737418240
-
-# RIL
-ENABLE_VENDOR_RIL_SERVICE := true
-
 ALLOW_MISSING_DEPENDENCIES := true
 
 BOARD_VNDK_VERSION := current
@@ -179,4 +160,4 @@ BOARD_PROPERTY_OVERRIDES_SPLIT_ENABLED := true
 USE_XML_AUDIO_POLICY_CONF := 1
 
 # LineageHW
-BOARD_HARDWARE_CLASS += device/samsung/j7xelte/lineagehw
+BOARD_HARDWARE_CLASS += $(COMMON_PATH)/lineagehw
