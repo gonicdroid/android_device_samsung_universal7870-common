@@ -281,4 +281,63 @@ PRODUCT_CHARACTERISTICS := default
 DEVICE_PACKAGE_OVERLAYS += $(COMMON_PATH)/overlay
 
 # Zygote fix for older Mali binaries
-PRODUCT_PROPERTY_OVERRIDES += ro.zygote.disable_gl_preload=1
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.zygote.disable_gl_preload=1
+
+# Adoptable Storage
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.crypto.volume.filenames_mode=aes-256-cts 
+
+# Audio
+PRODUCT_PROPERTY_OVERRIDES += \
+    af.fast_track_multiplier=1 \
+    ro.vendor.audio_hal.force_voice_config=wide \
+    ro.config.media_vol_steps=25 \
+    ro.config.vc_call_vol_steps=7 
+
+# Bluetooth
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.bt.bdaddr_path=/efs/bluetooth/bt_addr \
+    bluetooth.device.class_of_device=90,1,16 
+
+# Graphics
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.opengles.version=196610 \
+    debug.hwc.otf=1 \
+    debug.hwc.winupdate=1 \
+    debug.hwc.nodirtyregion=1 \
+    debug.sf.disable_backpressure=1 \
+    ro.sf.lcd_density=320 \
+    ro.hardware.egl=mali
+
+# GPU WFD support
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.exynos.vendor.wfdsupport=1
+
+# RIL
+PRODUCT_PROPERTY_OVERRIDES += \
+    rild.libpath=/vendor/lib/libsec-ril.so \
+    rild.libargs=-d /dev/umts_ipc0 \
+    exynos.ril.modempath=/dev/block/mmcblk0p5 \
+    exynos.ril.nvpath=/efs/ \
+    vendor.sec.rild.libpath=/vendor/lib/libsec-ril.so \
+    vendor.sec.rild.libpath2=/vendor/lib/libsec-ril-dsds.so \
+    persist.radio.sib16_support=1 \
+    import /efs/factory.prop \
+    ro.multisim.simslotcount=2 \
+    ro.telephony.default_network=9
+
+# SurfaceFlinger
+PRODUCT_PROPERTY_OVERRIDES += \
+    debug.sf.auto_latch_unsignaled=0 \
+    debug.sf.enable_hwc_vds=0 \
+    debug.sf.enable_transaction_tracing=false \
+    ro.surface_flinger.max_frame_buffer_acquired_buffers=3 
+
+# WiFi
+PRODUCT_PROPERTY_OVERRIDES += \
+    wifi.interface=wlan0
+
+# Do not update the recovery image
+PRODUCT_PROPERTY_OVERRIDES += \
+    persist.vendor.recovery_update=false
