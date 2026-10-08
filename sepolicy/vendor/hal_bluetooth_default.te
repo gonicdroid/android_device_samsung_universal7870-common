@@ -1,8 +1,14 @@
-allow hal_bluetooth_default bluetooth_device:chr_file { ioctl open read write };
-allow hal_bluetooth_default bluetooth_data_file:file create_file_perms;
-allow hal_bluetooth_default bluetooth_data_file:dir rw_dir_perms;
+# /dev/ttySAC*
+allow hal_bluetooth_default bluetooth_device:chr_file rw_file_perms;
+
+# /efs
 allow hal_bluetooth_default efs_file:dir search;
+allow hal_bluetooth_default efs_file:file r_file_perms;
+r_dir_file(hal_bluetooth_default, bluetooth_efs_file)
 
-unix_socket_connect(hal_bluetooth_default, property, wcnss_filter)
+# sysfs rfkill
+allow hal_bluetooth_default sysfs_bluetooth_writable:file rw_file_perms;
+allow hal_bluetooth_default sysfs:file rw_file_perms;
 
-set_prop(hal_bluetooth_default, vendor_bluetooth_prop)
+# Vendor binder
+vndbinder_use(hal_bluetooth_default)

@@ -1,0 +1,18 @@
+# Graphics sysfs
+allow hal_graphics_composer_default sysfs_graphics:dir  search;
+allow hal_graphics_composer_default sysfs_graphics:file rw_file_perms;
+
+# uevent socket
+allow hal_graphics_composer_default self:netlink_kobject_uevent_socket create_socket_perms_no_ioctl;
+
+# Devices (secmem for secure memory, video_device for m2m1shot scaler)
+allow hal_graphics_composer_default secmem_device:chr_file rw_file_perms;
+allow hal_graphics_composer_default video_device:chr_file rw_file_perms;
+
+# Vendor binder for HWC
+vndbinder_use(hal_graphics_composer_default)
+
+# Exynos HWC Service
+add_hwservice(hal_graphics_composer_default, exynos_hwc_hwservice)
+allow hal_graphics_composer_default exynos_hwc_hwservice:hwservice_manager find;
+

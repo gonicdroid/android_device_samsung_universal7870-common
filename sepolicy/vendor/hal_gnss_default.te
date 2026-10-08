@@ -1,11 +1,20 @@
-vndbinder_use(hal_gnss_default)
+# hal_gnss_default.te
 
+# cgroups tasks
+allow hal_gnss_default cgroup:file getattr;
+
+# /data/vendor/gps
+allow hal_gnss_default gps_vendor_data_file:dir rw_dir_perms;
+allow hal_gnss_default gps_vendor_data_file:file create_file_perms;
+allow hal_gnss_default gps_vendor_data_file:fifo_file create_file_perms;
+
+# /data/system/gps
+allow hal_gnss_default gps_data_file:dir rw_dir_perms;
+allow hal_gnss_default gps_data_file:file create_file_perms;
+allow hal_gnss_default gps_data_file:fifo_file create_file_perms;
+
+# Connect to gpsd
 allow hal_gnss_default gpsd:unix_stream_socket connectto;
 
-allow hal_gnss_default gps_data_file:dir { getattr add_name search write };
-allow hal_gnss_default gps_data_file:file { open read write create setattr getattr };
-allow hal_gnss_default gps_data_file:fifo_file { open read write create setattr };
-
-allow hal_gnss_default gps_vendor_data_file:dir { getattr add_name search write };
-allow hal_gnss_default gps_vendor_data_file:file { open read write create setattr getattr };
-allow hal_gnss_default gps_vendor_data_file:fifo_file { open read write create setattr };
+# Vendor binder
+vndbinder_use(hal_gnss_default)

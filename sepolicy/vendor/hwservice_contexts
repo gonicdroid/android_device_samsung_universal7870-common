@@ -1,0 +1,2 @@
+vendor.samsung.hardware.nfc::ISecNfc                                  u:object_r:sec_nfc_hwservice:s0
+vendor.samsung_slsi.hardware.ExynosHWCServiceTW::IExynosHWCServiceTW   u:object_r:exynos_hwc_hwservice:s0

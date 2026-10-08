@@ -1,4 +1,11 @@
-vendor_internal_prop(vendor_cbd_prop)
-vendor_internal_prop(vendor_radio_prop)
-vendor_internal_prop(vendor_bluetooth_prop)
-vendor_internal_prop(vendor_wlan_prop)
+# CP-Boot Daemon
+type cpboot-daemon_prop, property_type;
+
+# modemloader
+type modemloader_prop, property_type;
+
+# mobicore (tee)
+type tee_prop, property_type;
+
+# sswap
+type sswap_prop, property_type;

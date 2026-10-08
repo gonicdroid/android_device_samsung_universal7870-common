@@ -1,6 +1,21 @@
-allow hal_audio_default adb_data_file:file { getattr open read execute };
-allow hal_audio_default rild:unix_stream_socket connectto;
-allow hal_audio_default sysfs_dt_firmware:dir search;
-allow hal_audio_default sysfs_dt_firmware:file { open read };
+# hal_audio_default.te
 
-binder_call(hal_audio_default, system_suspend_server)
+# Allow audio HAL to communicate with rild for in-call voice routing
+allow hal_audio_default rild:unix_stream_socket connectto;
+
+# TFA98xx amplifier
+allow hal_audio_default amplifier_device:chr_file rw_file_perms;
+
+# /efs/maxim
+r_dir_file(hal_audio_default, efs_file)
+r_dir_file(hal_audio_default, sec_efs_file)
+r_dir_file(hal_audio_default, imei_efs_file)
+
+# /sys/firmware/devicetree/base/... mixer-paths
+r_dir_file(hal_audio_default, sysfs)
+
+# Property service
+set_prop(hal_audio_default, audio_prop)
+
+# Vendor binder
+vndbinder_use(hal_audio_default)

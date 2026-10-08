@@ -317,13 +317,11 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # RIL
 PRODUCT_PROPERTY_OVERRIDES += \
     rild.libpath=/vendor/lib/libsec-ril.so \
-    rild.libargs=-d /dev/umts_ipc0 \
     exynos.ril.modempath=/dev/block/mmcblk0p5 \
     exynos.ril.nvpath=/efs/ \
     vendor.sec.rild.libpath=/vendor/lib/libsec-ril.so \
     vendor.sec.rild.libpath2=/vendor/lib/libsec-ril-dsds.so \
     persist.radio.sib16_support=1 \
-    import /efs/factory.prop \
     ro.multisim.simslotcount=2 \
     ro.telephony.default_network=9
 

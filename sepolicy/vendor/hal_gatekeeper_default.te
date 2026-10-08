@@ -1,0 +1,5 @@
+# hal_gatekeeper_default.te
+
+# /efs/TEE/gk_context_*
+allow hal_gatekeeper_default efs_file:dir rw_dir_perms;
+allow hal_gatekeeper_default efs_file:file create_file_perms;

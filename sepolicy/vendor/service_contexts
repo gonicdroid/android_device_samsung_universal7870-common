@@ -1,1 +1,2 @@
-android.hardware.drm.IDrmFactory/widevine    u:object_r:hal_drm_service:s0
+# HWC
+Exynos.HWCService                           u:object_r:surfaceflinger_service:s0

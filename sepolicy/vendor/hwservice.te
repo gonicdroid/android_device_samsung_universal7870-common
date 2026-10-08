@@ -1,0 +1,7 @@
+# hwservice.te
+
+# Samsung NFC
+type sec_nfc_hwservice, hwservice_manager_type;
+
+# Exynos HWC
+type exynos_hwc_hwservice, hwservice_manager_type;

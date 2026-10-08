@@ -1,5 +1,2 @@
-allow domain debugfs_ion:dir search;
-allow domain debugfs_mali:dir search;
-
-dontaudit domain debugfs_tracing_debug:file { getattr open read write };
-dontaudit domain debugfs_tracing_debug:dir { add_name write create };
+# Allow all domains to search debugfs for ION memory and Mali GPU drivers
+allow domain { debugfs_ion debugfs_mali }:dir search;

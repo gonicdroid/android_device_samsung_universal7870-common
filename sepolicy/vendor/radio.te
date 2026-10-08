@@ -1,0 +1,4 @@
+# radio.te
+
+# Allow com.android.phone to stat settings package dir
+allow radio system_app_data_file:dir getattr;

@@ -1,1 +1,1 @@
-get_prop(zygote, exported_camera_prop);
+dontaudit zygote proc:file r_file_perms;

@@ -1,0 +1,2 @@
+# hal_graphics_allocator_default.te
+vndbinder_use(hal_graphics_allocator_default)

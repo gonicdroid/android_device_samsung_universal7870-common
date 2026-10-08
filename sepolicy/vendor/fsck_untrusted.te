@@ -1,4 +1,0 @@
-allow fsck_untrusted block_device:dir getattr;
-
-allowxperm fsck_untrusted vold_device:blk_file ioctl 0x1271;
-allowxperm fsck_untrusted vold_device:blk_file ioctl BLKROGET;

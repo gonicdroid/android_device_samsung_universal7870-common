@@ -1,3 +1,2 @@
-allow hal_memtrack_default debugfs_mali:dir { open read };
-allow hal_memtrack_default debugfs_mali:file { getattr open read };
-allow hal_memtrack_default debugfs_ion:file { getattr open read };
+allow hal_memtrack_default { debugfs_ion debugfs_mali }:dir r_dir_perms;
+allow hal_memtrack_default { debugfs_ion debugfs_mali }:file r_file_perms;

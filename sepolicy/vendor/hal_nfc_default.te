@@ -1,0 +1,19 @@
+# hal_nfc_default.te
+
+# Device node
+allow hal_nfc_default nfc_device:chr_file rw_file_perms;
+
+# /efs
+allow hal_nfc_default efs_file:dir search;
+
+# /efs/sec_efs/nfc
+allow hal_nfc_default sec_efs_file:dir create_dir_perms;
+allow hal_nfc_default sec_efs_file:file create_file_perms;
+
+# ISecNfc service
+add_hwservice(hal_nfc_default, sec_nfc_hwservice)
+allow hal_nfc_default sec_nfc_hwservice:hwservice_manager find;
+allow nfc sec_nfc_hwservice:hwservice_manager find;
+
+# Vendor binder
+vndbinder_use(hal_nfc_default)

@@ -1,0 +1,26 @@
+#### wifiloader
+#
+type wifiloader, domain;
+type wifiloader_exec, exec_type, file_type, vendor_file_type;
+
+init_daemon_domain(wifiloader)
+# unix_socket_connect(wifiloader, property, init)
+
+allow wifiloader proc:file r_file_perms;
+allow wifiloader sysfs_wlan_fwpath:file setattr;
+allow wifiloader sysfs_wifi:dir search;
+allow wifiloader sysfs_wifi:file rw_file_perms;
+allow wifiloader wifi_data_file:file { rw_file_perms setattr };
+set_prop(wifiloader, wifi_prop);
+
+# /efs
+allow wifiloader efs_file:dir search;
+
+# /efs/wifi
+allow wifiloader wifi_efs_file:dir rw_dir_perms;
+allow wifiloader wifi_efs_file:file create_file_perms;
+
+# load .ko modules and configure wifi
+allow wifiloader self:udp_socket create_socket_perms;
+allowxperm wifiloader self:udp_socket ioctl priv_sock_ioctls;
+allow wifiloader self:capability { chown dac_override fowner net_admin net_raw sys_module };
