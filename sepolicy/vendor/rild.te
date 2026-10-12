@@ -69,3 +69,7 @@ allow rild proc_net:file rw_file_perms;
 
 # vendor.cbd.
 # set_prop(rild, vendor_cbd_prop)
+
+# Samsung Radio HW Service
+add_hwservice(rild, sec_radio_hwservice)
+allow rild sec_radio_hwservice:hwservice_manager find;

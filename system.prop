@@ -5,12 +5,3 @@ ro.kernel.ebpf.supported=false
 ro.lmk.use_minfree_levels=true
 ro.lmk.use_psi=false
 
-# Dev
-persist.sys.usb.config=mtp,adb
-ro.adb.secure=0
-ro.secure=0
-ro.debuggable=1
-ro.logd.size=32M
-ro.logd.size.main=32M
-ro.logd.size.system=32M
-

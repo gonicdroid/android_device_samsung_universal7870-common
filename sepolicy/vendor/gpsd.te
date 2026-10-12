@@ -37,9 +37,10 @@ allow gpsd dnsproxyd_socket:sock_file write;
 allow gpsd netd:unix_stream_socket connectto;
 
 # /data/vendor/gps
-allow gpsd gps_vendor_data_file:dir rw_dir_perms;
+allow gpsd gps_vendor_data_file:dir create_dir_perms;
 allow gpsd gps_vendor_data_file:file create_file_perms;
 allow gpsd gps_vendor_data_file:fifo_file create_file_perms;
+allow gpsd gps_vendor_data_file:sock_file create_file_perms;
 
 # /data/system/gps
 allow gpsd gps_data_file:dir create_dir_perms;

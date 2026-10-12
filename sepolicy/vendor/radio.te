@@ -2,3 +2,6 @@
 
 # Allow com.android.phone to stat settings package dir
 allow radio system_app_data_file:dir getattr;
+
+# Samsung Radio HW Service
+allow radio sec_radio_hwservice:hwservice_manager find;
