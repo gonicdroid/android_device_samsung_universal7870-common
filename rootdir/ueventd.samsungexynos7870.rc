@@ -111,6 +111,9 @@
 /dev/esfp0                0660   system     system
 /dev/goodix_fp            0660   system     system
 
+# GNSS
+/dev/gnss_ipc             0660   gps        system
+
 # DVB API device nodes
 /dev/dvb*                 0660   root       system
 
