@@ -141,7 +141,7 @@ vendor/lib/vndk-sp/libion.so
 vendor/lib/vndk-sp/libion.so:vendor/lib/libion.so
 vendor/lib/libion_exynos.so
 
-# GPS - A260GDDSCAUJ1
+# GPS - J701MUBUBCZC2
 vendor/lib/hw/gps.default.so 
 vendor/bin/hw/gpsd
 vendor/lib/libsensorndkbridge.so
