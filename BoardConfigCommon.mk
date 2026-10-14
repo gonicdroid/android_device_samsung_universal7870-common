@@ -21,7 +21,7 @@ TARGET_SPECIFIC_HEADER_PATH := $(COMMON_PATH)/include
 
 # Architecture
 TARGET_ARCH := arm
-TARGET_ARCH_VARIANT := armv7-a-neon
+TARGET_ARCH_VARIANT := armv8-a
 TARGET_CPU_ABI := armeabi-v7a
 TARGET_CPU_ABI2 := armeabi
 TARGET_CPU_VARIANT := cortex-a53
@@ -132,10 +132,10 @@ ENABLE_VENDOR_RIL_SERVICE := true
 BOARD_ROOT_EXTRA_FOLDERS := efs
 
 # SELinux
-BOARD_SEPOLICY_DIRS += $(COMMON_PATH)/sepolicy/vendor
-BOARD_VENDOR_SEPOLICY_DIRS += $(COMMON_PATH)/sepolicy/vendor
-BOARD_PLAT_PRIVATE_SEPOLICY_DIR += $(COMMON_PATH)/sepolicy/private
-SELINUX_IGNORE_NEVERALLOWS := true
+#BOARD_SEPOLICY_DIRS += $(COMMON_PATH)/sepolicy/vendor
+#BOARD_VENDOR_SEPOLICY_DIRS += $(COMMON_PATH)/sepolicy/vendor
+#BOARD_PLAT_PRIVATE_SEPOLICY_DIR += $(COMMON_PATH)/sepolicy/private
+#SELINUX_IGNORE_NEVERALLOWS := true
 
 # Bootanimation
 TARGET_SCREEN_WIDTH := 720
@@ -153,8 +153,14 @@ BOARD_AVB_ENABLE := false
 
 ALLOW_MISSING_DEPENDENCIES := true
 
-BOARD_VNDK_VERSION := current
 BOARD_PROPERTY_OVERRIDES_SPLIT_ENABLED := true
+
+# Shims
+TARGET_LD_SHIM_LIBS += \
+    /vendor/lib/vendor.samsung.hardware.radio@1.1_vendor.so|libshim_sec.so \
+    /system/vendor/lib/vendor.samsung.hardware.radio@1.1_vendor.so|libshim_sec.so \
+    /vendor/lib/libsensorndkbridge.so|libshim_sec.so \
+    /system/vendor/lib/libsensorndkbridge.so|libshim_sec.so
 
 # AUDIO
 USE_XML_AUDIO_POLICY_CONF := 1

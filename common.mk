@@ -277,6 +277,10 @@ PRODUCT_PACKAGES += \
     charger_res_images \
     lineage_charger_res_image
 
+# Shims
+PRODUCT_PACKAGES += \
+    libshim_sec
+
 # -----------------------------------------------------------
 # 6. Device Overrides
 # -----------------------------------------------------------
