@@ -144,6 +144,7 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     android.hardware.radio@1.0 \
     android.hardware.radio@1.1 \
+    android.hardware.radio@1.2 \
     android.hardware.radio.deprecated@1.0 \
     libxml2 \
     rild
@@ -275,10 +276,6 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     charger_res_images \
     lineage_charger_res_image
-
-# Shims
-PRODUCT_PACKAGES += \
-    libshim_sec
 
 # -----------------------------------------------------------
 # 6. Device Overrides

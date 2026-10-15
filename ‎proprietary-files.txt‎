@@ -105,15 +105,16 @@ vendor/lib/lib_SoundAlive_SRC384_ver300.so
 # Lights - A260GDDSCAUJ1
 vendor/lib/hw/lights.exynos5.so
 
-# RIL - A260GDDSCAUJ1
+# RIL - J701MUBUBCZC2
 vendor/bin/hw/rild
 vendor/lib/libsec-ril.so
 vendor/lib/libsec-ril-dsds.so
 vendor/lib/libril.so
 vendor/lib/librilutils.so
 vendor/lib/libreference-ril.so
-vendor/lib/vendor.samsung.hardware.radio@1.1_vendor.so
-vendor/lib/vendor.samsung.hardware.radio.secoemhook@1.0_vendor.so
+vendor/lib/vendor.samsung.hardware.radio@1.2_vendor.so
+vendor/lib/vendor.samsung.hardware.radio.secbridge@1.0_vendor.so
+vendor/lib/vendor.samsung.hardware.radio.sechook@1.0_vendor.so
 vendor/lib/vendor.samsung.hardware.radio.channel@1.0_vendor.so
 
 # OMX - A260GDDSCAUJ1

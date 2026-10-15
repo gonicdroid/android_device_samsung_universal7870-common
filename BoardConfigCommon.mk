@@ -158,11 +158,6 @@ ALLOW_MISSING_DEPENDENCIES := true
 
 BOARD_PROPERTY_OVERRIDES_SPLIT_ENABLED := true
 
-# Shims
-TARGET_LD_SHIM_LIBS += \
-    /vendor/lib/vendor.samsung.hardware.radio@1.1_vendor.so|libshim_sec.so \
-    /system/vendor/lib/vendor.samsung.hardware.radio@1.1_vendor.so|libshim_sec.so
-
 # AUDIO
 USE_XML_AUDIO_POLICY_CONF := 1
 
