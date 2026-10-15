@@ -113,6 +113,9 @@ TARGET_SOC := exynos7870
 TARGET_NO_BOOTLOADER := true
 TARGET_NO_RADIOIMAGE := true
 
+# Power HAL
+TARGET_POWERHAL_VARIANT := samsung
+
 # Properties
 TARGET_SYSTEM_PROP += $(COMMON_PATH)/system.prop
 TARGET_VENDOR_PROP += $(COMMON_PATH)/vendor.prop
@@ -165,3 +168,5 @@ USE_XML_AUDIO_POLICY_CONF := 1
 
 # LineageHW
 BOARD_HARDWARE_CLASS += $(COMMON_PATH)/lineagehw
+
+

@@ -110,9 +110,7 @@ PRODUCT_PACKAGES += \
 
 # Lights
 PRODUCT_PACKAGES += \
-    android.hardware.light@2.0-impl \
-    android.hardware.light@2.0-service \
-    lights.exynos5
+    android.hardware.light@2.0-service.samsung
 
 # Media / OMX 
 PRODUCT_PACKAGES += \
@@ -140,7 +138,7 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     android.hardware.power@1.0-impl \
     android.hardware.power@1.0-service \
-    power.universal7870_go
+    power.exynos7870
 
 # RIL
 PRODUCT_PACKAGES += \
