@@ -164,4 +164,11 @@ USE_XML_AUDIO_POLICY_CONF := 1
 # LineageHW
 BOARD_HARDWARE_CLASS += $(COMMON_PATH)/lineagehw
 
+# Shims
+TARGET_LD_SHIM_LIBS += \
+    /vendor/lib/libexynoscamera.so|libexynoscamera_shim.so \
+    /system/vendor/lib/libexynoscamera.so|libexynoscamera_shim.so \
+    /vendor/lib/libexynoscamera3.so|libexynoscamera_shim.so \
+    /system/vendor/lib/libexynoscamera3.so|libexynoscamera_shim.so
+
 

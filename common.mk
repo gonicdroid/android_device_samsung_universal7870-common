@@ -64,6 +64,7 @@ PRODUCT_PACKAGES += \
     libhwjpeg \
     libexynoscamera \
     libexynoscamera3 \
+    libexynoscamera_shim \
     camera.exynos5
 
 # ConfigStore
@@ -204,6 +205,10 @@ PRODUCT_COPY_FILES += \
     $(COMMON_PATH)/configs/media/media_codecs_google_telephony.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_google_telephony.xml \
     $(COMMON_PATH)/configs/media/media_codecs_google_video.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_google_video.xml \
     $(COMMON_PATH)/configs/media/media_codecs_google_video_le.xml:$(TARGET_COPY_OUT_VENDOR)/etc/media_codecs_google_video_le.xml
+
+# Camera
+PRODUCT_COPY_FILES += \
+    $(COMMON_PATH)/configs/camera/external_camera_config.xml:$(TARGET_COPY_OUT_VENDOR)/etc/external_camera_config.xml
 
 # GNSS
 PRODUCT_COPY_FILES += \

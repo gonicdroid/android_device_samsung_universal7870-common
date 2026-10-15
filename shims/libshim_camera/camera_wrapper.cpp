@@ -139,7 +139,10 @@ static int shim_cam1_set_parameters(struct camera_device *dev, const char *param
 
 static int load_vendor_module() {
     if (gVendorModule) return 0;
-    dlopen("/vendor/lib/libexynoscamera_shim.so", RTLD_NOW | RTLD_GLOBAL);
+    void* shim = dlopen("/vendor/lib/libexynoscamera_shim.so", RTLD_NOW | RTLD_GLOBAL);
+    if (!shim) {
+        ALOGE("Failed to dlopen /vendor/lib/libexynoscamera_shim.so: %s", dlerror());
+    }
     void* handle = dlopen("/vendor/lib/hw/camera.exynos5_vendor.so", RTLD_NOW);
     if (!handle) {
         ALOGE("Failed to dlopen /vendor/lib/hw/camera.exynos5_vendor.so: %s", dlerror());
