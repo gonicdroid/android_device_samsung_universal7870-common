@@ -14,7 +14,7 @@ allow rild gpsd:file r_file_perms;
 # /data
 allow rild system_data_file:dir r_dir_perms;
 allow rild system_data_file:file r_file_perms;
-allow rild self:capability dac_read_search;
+dontaudit rild self:capability { dac_override dac_read_search };
 
 # /data/vendor/log
 allow rild log_vendor_data_file:dir rw_dir_perms;
@@ -68,7 +68,7 @@ allow rild proc_net:file rw_file_perms;
 # get_prop(rild, exported_radio_prop)
 
 # vendor.cbd.
-# set_prop(rild, vendor_cbd_prop)
+set_prop(rild, modemloader_prop)
 
 # Samsung Radio HW Service
 add_hwservice(rild, sec_radio_hwservice)

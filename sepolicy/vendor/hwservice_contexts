@@ -3,5 +3,7 @@ vendor.samsung_slsi.hardware.ExynosHWCServiceTW::IExynosHWCServiceTW   u:object_
 vendor.samsung.hardware.radio::IRadio                                   u:object_r:sec_radio_hwservice:s0
 vendor.samsung.hardware.radio.secoemhook::ISecOemHook                  u:object_r:sec_radio_hwservice:s0
 vendor.samsung.hardware.radio.channel::ISecChannel                    u:object_r:sec_radio_hwservice:s0
+vendor.samsung.hardware.radio.secbridge::ISecBridge                      u:object_r:sec_radio_hwservice:s0
+vendor.samsung.hardware.radio.sechook::IOemHook                         u:object_r:sec_radio_hwservice:s0
 android.hardware.tetheroffload.config::IOffloadConfig                    u:object_r:hal_tetheroffload_hwservice:s0
 android.hardware.tetheroffload.control::IOffloadControl                  u:object_r:hal_tetheroffload_hwservice:s0

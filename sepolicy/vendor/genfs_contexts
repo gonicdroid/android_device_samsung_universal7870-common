@@ -18,10 +18,18 @@ genfscon proc /sec_log          u:object_r:proc_sec:s0
 #genfscon sysfs /class/sec      u:object_r:sysfs_sec:s0
 
 # Power supply devices
-genfscon sysfs /devices/battery.20/power_supply                                     u:object_r:sysfs_usb_supply:s0
-genfscon sysfs /devices/i2c.26/i2c-8/8-0034/s2mu003-charger/power_supply            u:object_r:sysfs_usb_supply:s0
-genfscon sysfs /devices/13890000.hsi2c/i2c-2/2-0035/power_supply                    u:object_r:sysfs_usb_supply:s0
-genfscon sysfs /devices/platform/htc_battery/power_supply/ps                        u:object_r:sysfs_usb_supply:s0
+genfscon sysfs /devices/battery/power_supply                                        u:object_r:sysfs_batteryinfo:s0
+genfscon sysfs /devices/battery.20/power_supply                                     u:object_r:sysfs_batteryinfo:s0
+genfscon sysfs /devices/battery.43/power_supply                                     u:object_r:sysfs_batteryinfo:s0
+genfscon sysfs /devices/platform/battery/power_supply                               u:object_r:sysfs_batteryinfo:s0
+genfscon sysfs /devices/i2c.26/i2c-8/8-0034/s2mu003-charger/power_supply            u:object_r:sysfs_batteryinfo:s0
+genfscon sysfs /devices/13890000.hsi2c/i2c-2/2-0035/power_supply                    u:object_r:sysfs_batteryinfo:s0
+genfscon sysfs /devices/13870000.i2c/i2c-4/4-003d/s2mu005-charger/power_supply     u:object_r:sysfs_batteryinfo:s0
+genfscon sysfs /devices/13830000.i2c/i2c-8/8-003b/power_supply                     u:object_r:sysfs_batteryinfo:s0
+genfscon sysfs /devices/platform/htc_battery/power_supply/ps                        u:object_r:sysfs_batteryinfo:s0
+
+# Wi-Fi
+genfscon sysfs /wifi                                                                u:object_r:sysfs_wifi:s0
 
 # Input devices
 genfscon sysfs /devices/virtual/sec/sec_touchkey                            u:object_r:sysfs_input:s0
@@ -39,7 +47,6 @@ genfscon sysfs /devices/13850000.i2c/i2c-10/10-0050/input/input3            u:ob
 genfscon sysfs /devices/i2c.23/i2c-5/5-0020/input/input2                    u:object_r:sysfs_input:s0
 
 # A5 power supply devices
-genfscon sysfs /devices/battery.43/power_supply                                     u:object_r:sysfs_usb_supply:s0
 genfscon sysfs /devices/i2c.42/i2c-7/7-0071/power_supply                            u:object_r:sysfs_usb_supply:s0
 genfscon sysfs /devices/13890000.hsi2c/i2c-2/2-0049/sm5705-charger/power_supply     u:object_r:sysfs_usb_supply:s0
 
@@ -51,6 +58,10 @@ genfscon sysfs /devices/virtual/fingerprint/fingerprint                     u:ob
 # S5 NEO Input devices
 genfscon sysfs /devices/13860000.i2c/i2c-11/11-0048/input/input2            u:object_r:sysfs_input:s0
 genfscon sysfs /devices/i2c.22/i2c-4/4-0020/input/input1                    u:object_r:sysfs_input:s0
+
+# J7 2016 Input devices
+genfscon sysfs /devices/13840000.i2c                                            u:object_r:sysfs_input:s0
+genfscon sysfs /devices/13850000.i2c                                            u:object_r:sysfs_input:s0
 
 # SEC GPIO input devices
 genfscon sysfs /class/secgpio_check/secgpio_check_all/gpioinit_check        u:object_r:sysfs_input:s0
@@ -103,10 +114,7 @@ genfscon sysfs /devices/13870000.hsi2c/i2c-0/0-002e/iio:device2     u:object_r:s
 
 genfscon sysfs /devices/13540000.dwmmc0/mmc_host/mmc0/mmc0:0001/block/mmcblk0 u:object_r:sysfs_mmc:s0
 
-genfscon sysfs /devices/virtual/net/rmnet0 u:object_r:sysfs_net:s0
-genfscon sysfs /devices/virtual/net/rmnet1 u:object_r:sysfs_net:s0
-genfscon sysfs /devices/virtual/net/rmnet2 u:object_r:sysfs_net:s0
-genfscon sysfs /devices/virtual/net/rmnet3 u:object_r:sysfs_net:s0
+genfscon sysfs /devices/virtual/net        u:object_r:sysfs_net:s0
 
 genfscon sysfs /devices/14830000.decon_fb  u:object_r:sysfs_graphics:s0
 genfscon sysfs /devices/14800000.dsim      u:object_r:sysfs_graphics:s0
