@@ -117,6 +117,10 @@ vendor/lib/vendor.samsung.hardware.radio.secbridge@1.0_vendor.so
 vendor/lib/vendor.samsung.hardware.radio.sechook@1.0_vendor.so
 vendor/lib/vendor.samsung.hardware.radio.channel@1.0_vendor.so
 
+# RIL - CP Boot Daemon - A260GDDSCAUJ1
+vendor/bin/hw/cbd
+
+
 # OMX - A260GDDSCAUJ1
 vendor/lib/libExynosOMX_Core.so
 vendor/lib/libExynosOMX_Resourcemanager.so
