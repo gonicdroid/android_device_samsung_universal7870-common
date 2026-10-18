@@ -24,7 +24,7 @@ vendor/firmware/fimc_is_lib.bin
 vendor/firmware/setfile_3l2.bin
 vendor/firmware/setfile_5e3.bin
 
-# Firmware - MFC (Multi Format Codec) 
+# Firmware - MFC (Multi Format Codec) - M105MUBUACWC2
 vendor/firmware/mfc_fw.bin
 
 # Firmware - WiFi - J710MNUBS4CTF2
@@ -33,7 +33,7 @@ vendor/etc/wifi/bcmdhd_mfg.bin
 vendor/etc/wifi/bcmdhd_sta.bin
 vendor/etc/wifi/cred.conf
 vendor/etc/wifi/nvram.txt_3s
-vendor/etc/wifi/wpa_supplicant.conf
+#vendor/etc/wifi/wpa_supplicant.conf
 vendor/etc/wifi/bcmdhd_apsta.bin_3s
 vendor/etc/wifi/bcmdhd_mfg.bin_3s
 vendor/etc/wifi/bcmdhd_sta.bin_3s
@@ -66,11 +66,6 @@ vendor/lib/vendor.samsung_slsi.hardware.ExynosHWCServiceTW@1.0.so
 vendor/lib/libexynosscaler.so
 lib/libhardware_legacy.so:vendor/lib/libhardware_legacy.so
 lib/libbinder.so:vendor/lib/libbinder.so
-#vendor/bin/hw/android.hardware.graphics.allocator@2.0-service
-#vendor/lib/hw/android.hardware.graphics.allocator@2.0-impl.so
-#vendor/lib/hw/android.hardware.graphics.mapper@2.0-impl.so:
-#vendor/bin/hw/android.hardware.graphics.composer@2.1-service
-#vendor/lib/hw/android.hardware.graphics.composer@2.1-impl.so
 
 # Gralloc - A260GDDSCAUJ1
 vendor/lib/hw/gralloc.exynos5.so
@@ -78,7 +73,7 @@ vendor/lib/hw/gralloc.exynos5.so
 # Audio - A260GDDSCAUJ1
 vendor/lib/hw/audio.primary.universal7870_go.so:vendor/lib/hw/audio.primary.exynos5.so
 vendor/lib/libtinyalsa.so:vendor/lib/libtinyalsa_sec.so
-vendor/lib/libtinycompress.so
+#vendor/lib/libtinycompress.so
 vendor/lib/libaudioroute.so
 vendor/lib/libvndsecril-client.so
 vendor/lib/libaudio-ril.so
@@ -88,12 +83,12 @@ vendor/lib/librecordalive.so
 vendor/lib/libpreprocessing_nxp.so
 vendor/lib/soundfx/libLifevibes_lvverx.so
 vendor/lib/soundfx/libLifevibes_lvvetx.so
-vendor/lib/soundfx/libbundlewrapper.so
-vendor/lib/soundfx/libdownmix.so
-vendor/lib/soundfx/libeffectproxy.so
-vendor/lib/soundfx/libldnhncr.so
-vendor/lib/soundfx/libreverbwrapper.so
-vendor/lib/soundfx/libvisualizer.so
+#vendor/lib/soundfx/libbundlewrapper.so
+#vendor/lib/soundfx/libdownmix.so
+#vendor/lib/soundfx/libeffectproxy.so
+#vendor/lib/soundfx/libldnhncr.so
+#vendor/lib/soundfx/libreverbwrapper.so
+#vendor/lib/soundfx/libvisualizer.so
 vendor/lib/libsecaudioinfo.so
 vendor/lib/lib_soundaliveresampler.so
 vendor/lib/lib_SamsungRec_06006.so
@@ -110,8 +105,8 @@ vendor/bin/hw/rild
 vendor/lib/libsec-ril.so
 vendor/lib/libsec-ril-dsds.so
 vendor/lib/libril.so
-vendor/lib/librilutils.so
-vendor/lib/libreference-ril.so
+#vendor/lib/librilutils.so
+#vendor/lib/libreference-ril.so
 vendor/lib/vendor.samsung.hardware.radio@1.2_vendor.so
 vendor/lib/vendor.samsung.hardware.radio.secbridge@1.0_vendor.so
 vendor/lib/vendor.samsung.hardware.radio.sechook@1.0_vendor.so
@@ -136,7 +131,7 @@ vendor/lib/omx/libOMX.Exynos.VP8.Encoder.so
 vendor/lib/libstagefrighthw.so
 
 # Bluetooth - J710MNUBS4CTF2
-vendor/lib/libbt-vendor.so
+#vendor/lib/libbt-vendor.so
 
 # Memtrack - A260GDDSCAUJ1
 vendor/lib/hw/memtrack.exynos5.so
@@ -198,4 +193,4 @@ vendor/lib/hw/keystore.exynos7870.so:vendor/lib/hw/keystore.exynos5.so
 # TEE -A260GDDSCAUJ1
 vendor/lib/libwvhidl.so
 vendor/lib/mediadrm/libwvdrmengine.so
-vendor/lib/mediadrm/libdrmclearkeyplugin.so
+#vendor/lib/mediadrm/libdrmclearkeyplugin.so

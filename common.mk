@@ -54,7 +54,8 @@ PRODUCT_PACKAGES += \
 # Bluetooth
 PRODUCT_PACKAGES += \
     android.hardware.bluetooth@1.0-impl \
-    android.hardware.bluetooth@1.0-service
+    android.hardware.bluetooth@1.0-service \
+    libbt-vendor
 
 # Camera
 PRODUCT_PACKAGES += \
@@ -86,7 +87,8 @@ PRODUCT_PACKAGES += \
 # GNSS
 PRODUCT_PACKAGES += \
     android.hardware.gnss@1.0-impl \
-    android.hardware.gnss@1.0-service
+    android.hardware.gnss@1.0-service \
+    libshim_gpsd
 
 # Graphics & Display
 PRODUCT_PACKAGES += \
@@ -156,10 +158,6 @@ PRODUCT_PACKAGES += \
     android.hardware.sensors@1.0-service \
     sensors.universal7870_go
 
-# Thermal
-PRODUCT_PACKAGES += \
-    android.hardware.thermal@1.0-impl \
-    android.hardware.thermal@1.0-service
 
 # USB HAL
 PRODUCT_PACKAGES += \

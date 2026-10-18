@@ -47,7 +47,8 @@ BOARD_HAVE_SAMSUNG_WIFI          := true
 BOARD_HAVE_BLUETOOTH := true
 BOARD_HAVE_BLUETOOTH_BCM := true
 BOARD_HAVE_SAMSUNG_BLUETOOTH := true
-#BOARD_CUSTOM_BT_CONFIG := $(COMMON_PATH)/configs/bluetooth/libbt_vndcfg.txt
+USE_BLUETOOTH_BCM4343 := true
+BOARD_CUSTOM_BT_CONFIG := $(COMMON_PATH)/configs/bluetooth/libbt_vndcfg.txt
 
 # Boot image
 BOARD_CUSTOM_BOOTIMG := true
@@ -141,8 +142,8 @@ BOARD_VENDOR_SEPOLICY_DIRS += $(COMMON_PATH)/sepolicy/vendor
 TARGET_SCREEN_WIDTH := 720
 TARGET_SCREEN_HEIGHT := 1280
 
-# Vendor security patch level - J710MNUBS4CTF2
-VENDOR_SECURITY_PATCH := 2020-03-01
+# Vendor security patch level - M105MUBUACWC2
+VENDOR_SECURITY_PATCH := 2023-03-01
 
 # Vendor separation
 TARGET_COPY_OUT_VENDOR := system/vendor
@@ -158,14 +159,14 @@ BOARD_PROPERTY_OVERRIDES_SPLIT_ENABLED := true
 # AUDIO
 USE_XML_AUDIO_POLICY_CONF := 1
 
-# LineageHW
-BOARD_HARDWARE_CLASS += $(COMMON_PATH)/lineagehw
-
 # Shims
 TARGET_LD_SHIM_LIBS += \
     /vendor/lib/libexynoscamera.so|libexynoscamera_shim.so \
     /system/vendor/lib/libexynoscamera.so|libexynoscamera_shim.so \
     /vendor/lib/libexynoscamera3.so|libexynoscamera_shim.so \
-    /system/vendor/lib/libexynoscamera3.so|libexynoscamera_shim.so
+    /system/vendor/lib/libexynoscamera3.so|libexynoscamera_shim.so \
+    /vendor/bin/hw/gpsd|libshim_gpsd.so \
+    /system/vendor/bin/hw/gpsd|libshim_gpsd.so
+
 
 
