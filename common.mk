@@ -94,11 +94,11 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     android.hardware.graphics.allocator@2.0-impl \
     android.hardware.graphics.allocator@2.0-service \
-    android.hardware.graphics.composer@2.1-impl \
     android.hardware.graphics.composer@2.1-service \
-    android.hardware.graphics.mapper@2.0-impl \
-    gralloc.exynos5 \
-    hwcomposer.exynos5 \
+    android.hardware.graphics.mapper@2.0-impl-2.1 \
+    gralloc.exynos7870 \
+    hwcomposer.exynos7870 \
+    libhwc2on1adapter \
     vulkan.exynos5
 
 # Health
@@ -129,13 +129,14 @@ PRODUCT_PACKAGES += \
     libOMX.Exynos.MPEG4.Encoder \
     libOMX.Exynos.VP8.Decoder \
     libOMX.Exynos.VP8.Encoder \
-    libOMX.Exynos.WMV.Decoder
+    libOMX.Exynos.WMV.Decoder \
+    libstagefrighthw
 
 # Memtrack
 PRODUCT_PACKAGES += \
     android.hardware.memtrack@1.0-impl \
     android.hardware.memtrack@1.0-service \
-    memtrack.exynos5
+    memtrack.exynos7870
 
 # Power
 PRODUCT_PACKAGES += \

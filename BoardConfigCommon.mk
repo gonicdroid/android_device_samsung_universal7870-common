@@ -87,8 +87,6 @@ TARGET_USES_64_BIT_BINDER := true
 
 # LIBHWJPEG
 TARGET_USES_GTAXL_LIBHWJPEG := false
-TARGET_USES_HWC2ON1ADAPTER := true
-TARGET_USES_HWC2 := true
 
 # Lineage Health
 TARGET_HEALTH_CHARGING_CONTROL_CHARGING_PATH := /sys/class/power_supply/battery/batt_slate_mode
@@ -107,9 +105,10 @@ BOARD_FLASH_BLOCK_SIZE := 4096
 
 # Platform
 BOARD_VENDOR := samsung
-TARGET_BOARD_PLATFORM := exynos5
+TARGET_BOARD_PLATFORM := universal7870
 TARGET_BOOTLOADER_BOARD_NAME := exynos7870
 TARGET_SOC := exynos7870
+include hardware/samsung_slsi-linaro/config/BoardConfig7870.mk
 
 TARGET_NO_BOOTLOADER := true
 TARGET_NO_RADIOIMAGE := true
