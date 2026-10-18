@@ -51,21 +51,21 @@ vendor/lib/egl/libGLES_mali.so;SYMLINK=vendor/lib/hw/vulkan.exynos5.so,vendor/li
 vendor/lib/hw/sensors.universal7870_go.so:vendor/lib/hw/sensors.exynos5.so
 
 # HWC - A260GDDSCAUJ1
-vendor/lib/hw/hwcomposer.exynos5.so
-vendor/lib/libexynosv4l2.so
-vendor/lib/libexynosutils.so
-vendor/lib/libhwcutils.so
-vendor/lib/libexynosdisplay.so
-vendor/lib/libhdmi.so
-vendor/lib/libmpp.so
-vendor/lib/libexynosgscaler.so
-vendor/lib/libExynosHWCService.so
-vendor/lib/libvirtualdisplay.so
-vendor/lib/libhwc2on1adapter.so
-vendor/lib/vendor.samsung_slsi.hardware.ExynosHWCServiceTW@1.0.so
-vendor/lib/libexynosscaler.so
-lib/libhardware_legacy.so:vendor/lib/libhardware_legacy.so
-lib/libbinder.so:vendor/lib/libbinder.so
+#vendor/lib/hw/hwcomposer.exynos5.so
+#vendor/lib/libexynosv4l2.so
+#vendor/lib/libexynosutils.so
+#vendor/lib/libhwcutils.so
+#vendor/lib/libexynosdisplay.so
+#vendor/lib/libhdmi.so
+#vendor/lib/libmpp.so
+#vendor/lib/libexynosgscaler.so
+#vendor/lib/libExynosHWCService.so
+#vendor/lib/libvirtualdisplay.so
+#vendor/lib/libhwc2on1adapter.so
+#vendor/lib/vendor.samsung_slsi.hardware.ExynosHWCServiceTW@1.0.so
+#vendor/lib/libexynosscaler.so
+#lib/libhardware_legacy.so:vendor/lib/libhardware_legacy.so
+#lib/libbinder.so:vendor/lib/libbinder.so
 
 # Gralloc - A260GDDSCAUJ1
 vendor/lib/hw/gralloc.exynos5.so
@@ -134,19 +134,24 @@ vendor/lib/libstagefrighthw.so
 #vendor/lib/libbt-vendor.so
 
 # Memtrack - A260GDDSCAUJ1
-vendor/lib/hw/memtrack.exynos5.so
+#vendor/lib/hw/memtrack.exynos5.so
 
 # VNDK - A260GDDSCAUJ1
 vendor/lib/vndk-sp/libion.so
 vendor/lib/vndk-sp/libion.so:vendor/lib/libion.so
 vendor/lib/libion_exynos.so
 
-# GPS - J701MUBUBCZC2
-vendor/lib/hw/gps.default.so 
+# GPS - M105MUBUACWC2
 vendor/bin/hw/gpsd
-vendor/lib/libsensorndkbridge.so
+vendor/bin/hw/vendor.samsung.hardware.gnss@2.0-service
+vendor/etc/init/vendor.samsung.hardware.gnss@2.0-service.rc
+vendor/lib/hw/android.hardware.gnss@2.0-impl.so
+vendor/lib/hw/vendor.samsung.hardware.gnss@2.0-impl.so
+vendor/lib/libwrappergps.so
+vendor/lib/vendor.samsung.hardware.gnss@2.0.so
 vendor/etc/gnss/ca.pem
 vendor/etc/gnss/gps.cfg
+
 
 # Power - A260GDDSCAUJ1
 vendor/lib/hw/power.universal7870_go.so:vendor/lib/hw/power.exynos5.so
