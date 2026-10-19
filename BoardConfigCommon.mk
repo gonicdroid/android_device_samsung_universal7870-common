@@ -86,7 +86,7 @@ TARGET_KERNEL_CROSS_COMPILE_PREFIX := aarch64-linux-android-
 TARGET_USES_64_BIT_BINDER := true
 
 # LIBHWJPEG
-TARGET_USES_GTAXL_LIBHWJPEG := false
+TARGET_USES_UNIVERSAL_LIBHWJPEG := true
 
 # Lineage Health
 TARGET_HEALTH_CHARGING_CONTROL_CHARGING_PATH := /sys/class/power_supply/battery/batt_slate_mode

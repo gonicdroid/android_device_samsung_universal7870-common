@@ -16,11 +16,19 @@
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
-LOCAL_SRC_FILES := GraphicBuffer.cpp Fence.cpp
+LOCAL_SRC_FILES := GraphicBuffer.cpp Fence.cpp StreamAllocatorHook.cpp
 
-LOCAL_C_INCLUDES := frameworks/native/include
+LOCAL_C_INCLUDES := \
+    frameworks/native/include \
+    system/media/camera/include
 
-LOCAL_SHARED_LIBRARIES := libui
+LOCAL_HEADER_LIBRARIES := libhardware_headers
+
+LOCAL_SHARED_LIBRARIES := \
+    libui \
+    liblog \
+    libcutils \
+    libdl
 
 LOCAL_MODULE := libexynoscamera_shim
 LOCAL_MODULE_TAGS := optional

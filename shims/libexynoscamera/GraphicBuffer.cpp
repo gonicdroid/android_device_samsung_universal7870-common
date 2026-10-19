@@ -26,6 +26,8 @@ extern "C" void _ZN7android13GraphicBufferC1EjjijjjP13native_handleb(
         uint64_t usage,
         uint32_t stride);
 
+extern "C" void ensure_camera_hooks_installed();
+
 extern "C" void _ZN7android13GraphicBufferC1EjjijjP13native_handleb(
         uint32_t inWidth,
         uint32_t inHeight,
@@ -35,8 +37,10 @@ extern "C" void _ZN7android13GraphicBufferC1EjjijjP13native_handleb(
         native_handle_t* inHandle,
         bool keepOwnership)
 {
+    ensure_camera_hooks_installed();
     android::GraphicBuffer::HandleWrapMethod inMethod =
         (keepOwnership ? android::GraphicBuffer::TAKE_HANDLE : android::GraphicBuffer::WRAP_HANDLE);
     _ZN7android13GraphicBufferC1EjjijjjP13native_handleb(inHandle, inMethod, inWidth, inHeight,
         inFormat, static_cast<uint32_t>(1), static_cast<uint64_t>(inUsage), inStride);
 }
+

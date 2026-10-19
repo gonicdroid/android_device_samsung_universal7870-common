@@ -65,8 +65,7 @@ PRODUCT_PACKAGES += \
     libhwjpeg \
     libexynoscamera \
     libexynoscamera3 \
-    libexynoscamera_shim \
-    camera.universal7870
+    libexynoscamera_shim
 
 # ConfigStore
 PRODUCT_PACKAGES += \
@@ -159,7 +158,8 @@ PRODUCT_PACKAGES += \
 # Sensors
 PRODUCT_PACKAGES += \
     android.hardware.sensors@1.0-impl \
-    android.hardware.sensors@1.0-service
+    android.hardware.sensors@1.0-service \
+    libsensorndkbridge
 
 # USB HAL
 PRODUCT_PACKAGES += \

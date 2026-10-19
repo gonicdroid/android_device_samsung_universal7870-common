@@ -7,9 +7,9 @@ vendor/lib/libexynoscamera.so
 vendor/lib/libexynoscamera3.so
 
 # Camera common - A260GDDSCAUJ1
-vendor/lib/hw/camera.universal7870_go.so:vendor/lib/hw/camera.universal7870_vendor.so
-vendor/lib/libhwjpeg.so
-vendor/lib/libcsc.so
+vendor/lib/hw/camera.universal7870_go.so:vendor/lib/hw/camera.universal7870.so
+#vendor/lib/libhwjpeg.so
+#vendor/lib/libcsc.so
 vendor/lib/libstainkiller.so
 vendor/lib/libsecnativefeature.so
 vendor/lib/libuniplugin.so
