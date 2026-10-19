@@ -143,9 +143,9 @@ static int load_vendor_module() {
     if (!shim) {
         ALOGE("Failed to dlopen /vendor/lib/libexynoscamera_shim.so: %s", dlerror());
     }
-    void* handle = dlopen("/vendor/lib/hw/camera.exynos5_vendor.so", RTLD_NOW);
+    void* handle = dlopen("/vendor/lib/hw/camera.universal7870_vendor.so", RTLD_NOW);
     if (!handle) {
-        ALOGE("Failed to dlopen /vendor/lib/hw/camera.exynos5_vendor.so: %s", dlerror());
+        ALOGE("Failed to dlopen /vendor/lib/hw/camera.universal7870_vendor.so: %s", dlerror());
         return -EINVAL;
     }
     gVendorModule = (camera_module_t*) dlsym(handle, HAL_MODULE_INFO_SYM_AS_STR);

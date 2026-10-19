@@ -44,8 +44,8 @@ vendor/etc/wifi/wpa_supplicant_overlay.conf
 # WiFi - M105MUBUACWC2 
 vendor/bin/hw/macloader
 
-# Mali graphics - MaliT830_r22p0
-vendor/lib/egl/libGLES_mali.so;SYMLINK=vendor/lib/hw/vulkan.exynos5.so,vendor/lib/libOpenCL.so,vendor/lib/libOpenCL.so.1,vendor/lib/libOpenCL.so.1.1
+# Mali graphics - MaliT830_r29p0
+vendor/lib/egl/libGLES_mali.so;SYMLINK=vendor/lib/hw/vulkan.exynos5.so,vendor/lib/hw/vulkan.universal7870.so,vendor/lib/libOpenCL.so,vendor/lib/libOpenCL.so.1,vendor/lib/libOpenCL.so.1.1
 
 # Sensors - from J710MNUBS4CTF2
 vendor/lib/hw/sensors.universal7870_go.so:vendor/lib/hw/sensors.exynos5.so

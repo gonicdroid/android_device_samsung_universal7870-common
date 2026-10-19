@@ -110,6 +110,9 @@ TARGET_BOOTLOADER_BOARD_NAME := exynos7870
 TARGET_SOC := exynos7870
 include hardware/samsung_slsi-linaro/config/BoardConfig7870.mk
 
+# Gralloc
+BOARD_USES_EXYNOS5_COMMON_GRALLOC := true
+
 TARGET_NO_BOOTLOADER := true
 TARGET_NO_RADIOIMAGE := true
 
@@ -163,9 +166,6 @@ TARGET_LD_SHIM_LIBS += \
     /vendor/lib/libexynoscamera.so|libexynoscamera_shim.so \
     /system/vendor/lib/libexynoscamera.so|libexynoscamera_shim.so \
     /vendor/lib/libexynoscamera3.so|libexynoscamera_shim.so \
-    /system/vendor/lib/libexynoscamera3.so|libexynoscamera_shim.so \
-    /vendor/bin/hw/gpsd|libshim_gpsd.so \
-    /system/vendor/bin/hw/gpsd|libshim_gpsd.so
-
+    /system/vendor/lib/libexynoscamera3.so|libexynoscamera_shim.so
 
 
