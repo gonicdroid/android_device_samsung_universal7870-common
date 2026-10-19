@@ -4,10 +4,10 @@ on post-fs-data
     chown system system /dev/gnss_ipc
     mkdir /data/vendor 0771 system system
     chown system system /data/vendor
-    mkdir /data/vendor/gps 0771 system system
-    chown system system /data/vendor/gps
-    mkdir /data/vendor/gps/sgee 0771 system system
-    chown system system /data/vendor/gps/sgee
+    mkdir /data/vendor/gps 0771 gps system
+    chown gps system /data/vendor/gps
+    mkdir /data/vendor/gps/sgee 0771 gps system
+    chown gps system /data/vendor/gps/sgee
     rm /data/vendor/gps/gps_started
     rm /data/vendor/gps/glonass_started
     rm /data/vendor/gps/beidou_started
