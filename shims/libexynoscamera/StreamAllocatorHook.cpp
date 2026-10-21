@@ -29,12 +29,413 @@
 #include <string.h>
 #include <pthread.h>
 #include <stdint.h>
+#include <fcntl.h>
+#include <system/camera_metadata.h>
+
+#include <android/fdsan.h>
 
 #undef LOG_TAG
 #define LOG_TAG "ExynosCameraShimHook"
 
+#include <time.h>
+
 typedef int (*orig_configureStreams_t)(void *this_ptr, camera3_stream_configuration_t *stream_list);
 static orig_configureStreams_t g_orig_configureStreams = nullptr;
+
+typedef int (*orig_processCaptureRequest_t)(void *this_ptr, camera3_capture_request_t *request);
+static orig_processCaptureRequest_t g_orig_processCaptureRequest = nullptr;
+
+typedef int (*orig_releaseDevice_t)(void *this_ptr);
+static orig_releaseDevice_t g_orig_releaseDevice = nullptr;
+
+typedef int (*orig_constructStaticInfo_t)(int cameraId, camera_metadata_t **info);
+static orig_constructStaticInfo_t g_orig_constructStaticInfo = nullptr;
+
+typedef void *(*fn_getActivityControl_t)(void *params);
+typedef void *(*fn_getFlashMgr_t)(void *actCtrl);
+typedef void (*fn_setFlashStep_t)(void *flashMgr, int step);
+typedef void (*fn_setFlashStatus_t)(void *flashMgr, int status);
+
+static fn_getActivityControl_t fn_getActivityControl = nullptr;
+static fn_getFlashMgr_t fn_getFlashMgr = nullptr;
+static fn_setFlashStep_t fn_setFlashStep = nullptr;
+static fn_setFlashStatus_t fn_setFlashStatus = nullptr;
+
+static bool s_cam0_had_still_capture = false;
+static camera_metadata_t *s_cam0_last_preview_meta = nullptr;
+
+static void reset_cam0_flash(void *this_ptr) {
+    if (!this_ptr) return;
+    void *params = *(void **)((char *)this_ptr + 12);
+    if (!params) return;
+    if (!fn_getActivityControl) {
+        void *h = dlopen("libexynoscamera3.so", RTLD_NOLOAD);
+        if (!h) h = dlopen("libexynoscamera3.so", RTLD_NOW);
+        if (h) {
+            fn_getActivityControl = (fn_getActivityControl_t)dlsym(h, "_ZN7android23ExynosCamera3Parameters18getActivityControlEv");
+            fn_getFlashMgr = (fn_getFlashMgr_t)dlsym(h, "_ZN7android27ExynosCameraActivityControl11getFlashMgrEv");
+            fn_setFlashStep = (fn_setFlashStep_t)dlsym(h, "_ZN7android25ExynosCameraActivityFlash12setFlashStepENS0_10FLASH_STEPE");
+            fn_setFlashStatus = (fn_setFlashStatus_t)dlsym(h, "_ZN7android25ExynosCameraActivityFlash14setFlashStatusENS0_12FLASH_STATUSE");
+        }
+    }
+    if (fn_getActivityControl && fn_getFlashMgr && fn_setFlashStep && fn_setFlashStatus) {
+        void *actCtrl = fn_getActivityControl(params);
+        if (actCtrl) {
+            void *flashMgr = fn_getFlashMgr(actCtrl);
+            if (flashMgr) {
+                fn_setFlashStep(flashMgr, 0 /* FLASH_STEP_OFF */);
+                fn_setFlashStatus(flashMgr, 0 /* FLASH_STATUS_OFF */);
+                ALOGI("reset_cam0_flash: successfully reset flashStep and flashStatus to OFF");
+            }
+        }
+    }
+}
+
+static int s_cam1_flash_mode = 0;
+static int s_cam1_ae_mode = 1;
+static bool s_cam1_precapture_active = false;
+static int s_cam1_flash_firing = 0; // 0=off, 1=torch, 2=capture/pre-flash
+static int64_t s_cam1_capture_time_ms = 0;
+static camera3_stream_t *s_cam1_picture_stream = nullptr;
+static camera3_stream_t *s_cam1_preview_stream = nullptr;
+
+static inline int64_t get_time_ms() {
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (int64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+}
+
+static void set_front_flash(int val) {
+    static int s_cur_val = -1;
+    if (s_cur_val == val) return;
+    s_cur_val = val;
+
+    int fd = open("/sys/class/camera/flash/front_torch_flash", O_WRONLY);
+    if (fd >= 0) {
+        char buf[8];
+        int len = snprintf(buf, sizeof(buf), "%d\n", val);
+        write(fd, buf, len);
+        close(fd);
+        ALOGI("set_front_flash: wrote %d to /sys/class/camera/flash/front_torch_flash", val);
+    } else {
+        ALOGW("set_front_flash: open /sys/class/camera/flash/front_torch_flash failed: %s", strerror(errno));
+    }
+}
+
+static void *front_flash_watchdog(void *arg) {
+    (void)arg;
+    for (int i = 0; i < 20; i++) {
+        usleep(100000); // 100ms
+        if (s_cam1_flash_firing != 2) break;
+        int64_t elapsed = get_time_ms() - s_cam1_capture_time_ms;
+        if (!s_cam1_precapture_active && elapsed >= 300) {
+            ALOGI("front_flash_watchdog: capture elapsed %lld ms, turning OFF front flash", (long long)elapsed);
+            set_front_flash(0);
+            s_cam1_flash_firing = 0;
+            break;
+        }
+        if (elapsed > 2000) {
+            ALOGW("front_flash_watchdog: max timeout (2.0s) reached, turning OFF front flash");
+            set_front_flash(0);
+            s_cam1_flash_firing = 0;
+            s_cam1_precapture_active = false;
+            break;
+        }
+    }
+    return nullptr;
+}
+
+static void patch_front_camera_metadata(camera_metadata_t **info) {
+    if (!info || !*info) return;
+    camera_metadata_t *old_meta = *info;
+
+    size_t entry_count = get_camera_metadata_entry_count(old_meta);
+    size_t data_count = get_camera_metadata_data_count(old_meta);
+
+    camera_metadata_t *new_meta = allocate_camera_metadata(entry_count + 16, data_count + 256);
+    if (!new_meta) {
+        ALOGE("patch_front_camera_metadata: allocate_camera_metadata failed");
+        return;
+    }
+
+    if (append_camera_metadata(new_meta, old_meta) != 0) {
+        ALOGE("patch_front_camera_metadata: append_camera_metadata failed");
+        free_camera_metadata(new_meta);
+        return;
+    }
+
+    // 1. ANDROID_FLASH_INFO_AVAILABLE = TRUE (1)
+    uint8_t flash_avail = ANDROID_FLASH_INFO_AVAILABLE_TRUE;
+    camera_metadata_entry_t entry;
+    if (find_camera_metadata_entry(new_meta, ANDROID_FLASH_INFO_AVAILABLE, &entry) == 0) {
+        update_camera_metadata_entry(new_meta, entry.index, &flash_avail, 1, nullptr);
+    } else {
+        add_camera_metadata_entry(new_meta, ANDROID_FLASH_INFO_AVAILABLE, &flash_avail, 1);
+    }
+
+    // 2. ANDROID_CONTROL_AE_AVAILABLE_MODES
+    uint8_t ae_modes[] = {
+        ANDROID_CONTROL_AE_MODE_OFF,
+        ANDROID_CONTROL_AE_MODE_ON,
+        ANDROID_CONTROL_AE_MODE_ON_AUTO_FLASH,
+        ANDROID_CONTROL_AE_MODE_ON_ALWAYS_FLASH
+    };
+    if (find_camera_metadata_entry(new_meta, ANDROID_CONTROL_AE_AVAILABLE_MODES, &entry) == 0) {
+        update_camera_metadata_entry(new_meta, entry.index, ae_modes, sizeof(ae_modes), nullptr);
+    } else {
+        add_camera_metadata_entry(new_meta, ANDROID_CONTROL_AE_AVAILABLE_MODES, ae_modes, sizeof(ae_modes));
+    }
+
+    // 3. ANDROID_FLASH_INFO_CHARGE_DURATION
+    int64_t charge_duration = 0;
+    if (find_camera_metadata_entry(new_meta, ANDROID_FLASH_INFO_CHARGE_DURATION, &entry) == 0) {
+        update_camera_metadata_entry(new_meta, entry.index, &charge_duration, 1, nullptr);
+    } else {
+        add_camera_metadata_entry(new_meta, ANDROID_FLASH_INFO_CHARGE_DURATION, &charge_duration, 1);
+    }
+
+    free_camera_metadata(old_meta);
+    *info = new_meta;
+    ALOGI("patch_front_camera_metadata: successfully injected flash info to front camera metadata!");
+}
+
+static int my_constructStaticInfo(int cameraId, camera_metadata_t **info) {
+    ALOGI("my_constructStaticInfo: cameraId=%d", cameraId);
+    int ret = 0;
+    if (g_orig_constructStaticInfo) {
+        ret = g_orig_constructStaticInfo(cameraId, info);
+    } else {
+        void *h = dlopen("libexynoscamera3.so", RTLD_NOLOAD);
+        if (!h) h = dlopen("libexynoscamera3.so", RTLD_NOW);
+        if (h) {
+            orig_constructStaticInfo_t fn = (orig_constructStaticInfo_t)dlsym(h, "_ZN7android30ExynosCamera3MetadataConverter19constructStaticInfoEiPP15camera_metadata");
+            if (fn) ret = fn(cameraId, info);
+        }
+    }
+
+    if (ret == 0 && cameraId == 1) {
+        patch_front_camera_metadata(info);
+    }
+    return ret;
+}
+
+static int my_processCaptureRequest(void *this_ptr, camera3_capture_request_t *request) {
+    if (this_ptr && request) {
+        int cam_id = *(int *)((char *)this_ptr + 136);
+        if (cam_id == 0) {
+            bool is_still_capture = false;
+            if (request->settings) {
+                camera_metadata_ro_entry_t entry;
+                if (find_camera_metadata_ro_entry(request->settings, ANDROID_CONTROL_CAPTURE_INTENT, &entry) == 0) {
+                    if (entry.data.u8[0] == ANDROID_CONTROL_CAPTURE_INTENT_STILL_CAPTURE) {
+                        is_still_capture = true;
+                    }
+                }
+            }
+            if (!is_still_capture) {
+                for (uint32_t i = 0; i < request->num_output_buffers; i++) {
+                    camera3_stream_t *s = request->output_buffers[i].stream;
+                    if (s && s->format == HAL_PIXEL_FORMAT_BLOB) {
+                        is_still_capture = true;
+                        break;
+                    }
+                }
+            }
+
+            if (is_still_capture) {
+                s_cam0_had_still_capture = true;
+                ALOGI("my_processCaptureRequest(cam0): still capture frame %u detected", request->frame_number);
+            } else {
+                if (request->settings) {
+                    if (s_cam0_last_preview_meta) {
+                        free_camera_metadata(s_cam0_last_preview_meta);
+                    }
+                    s_cam0_last_preview_meta = clone_camera_metadata(request->settings);
+                }
+
+                if (s_cam0_had_still_capture) {
+                    ALOGI("my_processCaptureRequest(cam0): first preview frame %u after still capture. Resetting flash and cleaning metadata.",
+                          request->frame_number);
+                    reset_cam0_flash(this_ptr);
+
+                    bool injected_meta = false;
+                    camera_metadata_t *clean_meta = nullptr;
+                    if (request->settings == nullptr) {
+                        if (s_cam0_last_preview_meta) {
+                            request->settings = s_cam0_last_preview_meta;
+                            injected_meta = true;
+                        } else {
+                            clean_meta = allocate_camera_metadata(2, 8);
+                            uint8_t intent = ANDROID_CONTROL_CAPTURE_INTENT_PREVIEW;
+                            add_camera_metadata_entry(clean_meta, ANDROID_CONTROL_CAPTURE_INTENT, &intent, 1);
+                            request->settings = clean_meta;
+                            injected_meta = true;
+                        }
+                    }
+
+                    int ret = 0;
+                    if (!g_orig_processCaptureRequest) {
+                        void *h = dlopen("libexynoscamera3.so", RTLD_NOLOAD);
+                        if (!h) h = dlopen("libexynoscamera3.so", RTLD_NOW);
+                        if (h) {
+                            g_orig_processCaptureRequest = (orig_processCaptureRequest_t)dlsym(h, "_ZN7android13ExynosCamera321processCaptureRequestEP23camera3_capture_request");
+                        }
+                    }
+                    if (g_orig_processCaptureRequest) {
+                        ret = g_orig_processCaptureRequest(this_ptr, request);
+                    }
+
+                    if (injected_meta) {
+                        if (clean_meta) {
+                            free_camera_metadata(clean_meta);
+                        }
+                        request->settings = nullptr;
+                    }
+
+                    s_cam0_had_still_capture = false;
+                    return ret;
+                }
+            }
+        } else if (cam_id == 1) {
+            int precapture_trigger = -1;
+            int capture_intent = -1;
+
+            if (request->settings) {
+                camera_metadata_ro_entry_t entry;
+                if (find_camera_metadata_ro_entry(request->settings, ANDROID_FLASH_MODE, &entry) == 0) {
+                    s_cam1_flash_mode = entry.data.u8[0];
+                }
+                if (find_camera_metadata_ro_entry(request->settings, ANDROID_CONTROL_AE_MODE, &entry) == 0) {
+                    s_cam1_ae_mode = entry.data.u8[0];
+                }
+                if (find_camera_metadata_ro_entry(request->settings, ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER, &entry) == 0) {
+                    precapture_trigger = entry.data.u8[0];
+                    if (precapture_trigger == ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_START) {
+                        s_cam1_precapture_active = true;
+                    } else if (precapture_trigger == ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL) {
+                        s_cam1_precapture_active = false;
+                    }
+                }
+                if (find_camera_metadata_ro_entry(request->settings, ANDROID_CONTROL_CAPTURE_INTENT, &entry) == 0) {
+                    capture_intent = entry.data.u8[0];
+                }
+
+                ALOGI("my_processCaptureRequest(cam1): req=%u, num_out=%u, flash_mode=%d, ae_mode=%d, precapture=%d, intent=%d",
+                      request->frame_number, request->num_output_buffers, s_cam1_flash_mode, s_cam1_ae_mode, precapture_trigger, capture_intent);
+            }
+
+            // Check if this request is a still capture
+            bool is_capture = false;
+            for (uint32_t i = 0; i < request->num_output_buffers; i++) {
+                camera3_stream_t *s = request->output_buffers[i].stream;
+                if (!s) continue;
+                if (s == s_cam1_picture_stream ||
+                    s->format == HAL_PIXEL_FORMAT_BLOB ||
+                    (s_cam1_preview_stream && s != s_cam1_preview_stream)) {
+                    is_capture = true;
+                    break;
+                }
+            }
+            if (!is_capture && request->num_output_buffers > 1) {
+                is_capture = true;
+            }
+
+            if (is_capture) {
+                s_cam1_precapture_active = false;
+            }
+
+            int64_t now_ms = get_time_ms();
+
+            // 1. TORCH mode (e.g. video or explicit torch)
+            if (s_cam1_flash_mode == ANDROID_FLASH_MODE_TORCH) {
+                set_front_flash(1);
+                s_cam1_flash_firing = 1;
+            } else if (s_cam1_flash_firing == 1 && s_cam1_flash_mode == ANDROID_FLASH_MODE_OFF) {
+                set_front_flash(0);
+                s_cam1_flash_firing = 0;
+            }
+
+            // 2. STILL CAPTURE / PRECAPTURE with FLASH
+            bool flash_allowed = (s_cam1_ae_mode == ANDROID_CONTROL_AE_MODE_ON_ALWAYS_FLASH ||
+                                  s_cam1_ae_mode == ANDROID_CONTROL_AE_MODE_ON_AUTO_FLASH ||
+                                  s_cam1_flash_mode == ANDROID_FLASH_MODE_SINGLE);
+
+            if (s_cam1_flash_firing != 1 && flash_allowed) {
+                if (is_capture) {
+                    ALOGI("my_processCaptureRequest(cam1): still capture request! Firing front flash");
+                    set_front_flash(1);
+                    s_cam1_flash_firing = 2;
+                    s_cam1_capture_time_ms = now_ms;
+                    s_cam1_precapture_active = false;
+
+                    pthread_t tid;
+                    pthread_create(&tid, nullptr, front_flash_watchdog, nullptr);
+                    pthread_detach(tid);
+                } else if (s_cam1_precapture_active) {
+                    if (s_cam1_flash_firing != 2) {
+                        ALOGI("my_processCaptureRequest(cam1): precapture trigger active! Turning ON front flash");
+                        set_front_flash(1);
+                        s_cam1_flash_firing = 2;
+                        s_cam1_capture_time_ms = now_ms;
+
+                        pthread_t tid;
+                        pthread_create(&tid, nullptr, front_flash_watchdog, nullptr);
+                        pthread_detach(tid);
+                    }
+                }
+            }
+
+            // 3. Turn off capture flash after capture duration has passed
+            if (s_cam1_flash_firing == 2) {
+                if (!s_cam1_precapture_active && !is_capture) {
+                    // Preview frame arriving after capture
+                    if (now_ms - s_cam1_capture_time_ms >= 250) {
+                        ALOGI("my_processCaptureRequest(cam1): capture complete (%lld ms elapsed), turning OFF front flash",
+                              (long long)(now_ms - s_cam1_capture_time_ms));
+                        set_front_flash(0);
+                        s_cam1_flash_firing = 0;
+                    }
+                }
+            }
+        }
+    }
+
+    if (!g_orig_processCaptureRequest) {
+        void *h = dlopen("libexynoscamera3.so", RTLD_NOLOAD);
+        if (!h) h = dlopen("libexynoscamera3.so", RTLD_NOW);
+        if (h) {
+            g_orig_processCaptureRequest = (orig_processCaptureRequest_t)dlsym(h, "_ZN7android13ExynosCamera321processCaptureRequestEP23camera3_capture_request");
+        }
+    }
+
+    if (g_orig_processCaptureRequest) {
+        return g_orig_processCaptureRequest(this_ptr, request);
+    }
+    return -ENOSYS;
+}
+
+static int my_releaseDevice(void *this_ptr) {
+    ALOGI("my_releaseDevice: cleaning up device and front/rear flash");
+    set_front_flash(0);
+    s_cam1_flash_firing = 0;
+    s_cam1_precapture_active = false;
+    s_cam0_had_still_capture = false;
+    if (s_cam0_last_preview_meta) {
+        free_camera_metadata(s_cam0_last_preview_meta);
+        s_cam0_last_preview_meta = nullptr;
+    }
+    if (!g_orig_releaseDevice) {
+        void *h = dlopen("libexynoscamera3.so", RTLD_NOLOAD);
+        if (!h) h = dlopen("libexynoscamera3.so", RTLD_NOW);
+        if (h) {
+            g_orig_releaseDevice = (orig_releaseDevice_t)dlsym(h, "_ZN7android13ExynosCamera313releaseDeviceEv");
+        }
+    }
+    if (g_orig_releaseDevice) {
+        return g_orig_releaseDevice(this_ptr);
+    }
+    return 0;
+}
 
 static int (*fn_checkPreviewSize)(void *params, int w, int h) = nullptr;
 static int (*fn_checkPictureSize)(void *params, int w, int h) = nullptr;
@@ -194,6 +595,19 @@ extern "C" int my_configureStreams(void *this_ptr, camera3_stream_configuration_
     ALOGI("my_configureStreams: cam_id=%d, this=%p, params=%p, num_streams=%u",
           m_cameraId, this_ptr, m_parameters, stream_list->num_streams);
 
+    if (m_cameraId == 1) {
+        set_front_flash(0);
+        s_cam1_flash_firing = 0;
+        s_cam1_precapture_active = false;
+    } else if (m_cameraId == 0) {
+        s_cam0_had_still_capture = false;
+        reset_cam0_flash(this_ptr);
+        if (s_cam0_last_preview_meta) {
+            free_camera_metadata(s_cam0_last_preview_meta);
+            s_cam0_last_preview_meta = nullptr;
+        }
+    }
+
     camera3_stream_t *preview_stream = nullptr;
     camera3_stream_t *picture_stream = nullptr;
     camera3_stream_t *video_stream = nullptr;
@@ -236,6 +650,13 @@ extern "C" int my_configureStreams(void *this_ptr, camera3_stream_configuration_
         stream_list->streams[0]->format != HAL_PIXEL_FORMAT_BLOB) {
         preview_stream = stream_list->streams[0];
         picture_stream = nullptr;
+    }
+
+    if (m_cameraId == 1) {
+        s_cam1_picture_stream = picture_stream;
+        s_cam1_preview_stream = preview_stream;
+        ALOGI("my_configureStreams(cam1): picture_stream=%p, preview_stream=%p",
+              s_cam1_picture_stream, s_cam1_preview_stream);
     }
 
     if (m_parameters) {
@@ -379,6 +800,75 @@ static bool hook_got_for_camera_lib(struct dl_phdr_info *info) {
                     mprotect((void *)page_start, page_size, PROT_READ);
                     ALOGI("Successfully hooked configureStreams in %s to %p (orig=%p)",
                       info->dlpi_name, my_configureStreams, g_orig_configureStreams);
+                    hooked = true;
+                } else {
+                    ALOGE("Failed to mprotect GOT entry at %p: %s", got_entry, strerror(errno));
+                }
+            } else {
+                hooked = true;
+            }
+        } else if (strcmp(name, "_ZN7android30ExynosCamera3MetadataConverter19constructStaticInfoEiPP15camera_metadata") == 0) {
+            void **got_entry = (void **)(base + rel[i].r_offset);
+            ALOGI("Found constructStaticInfo GOT entry in %s at %p (value=%p)",
+                  info->dlpi_name, got_entry, *got_entry);
+
+            if (*got_entry != (void *)my_constructStaticInfo) {
+                if (!g_orig_constructStaticInfo) {
+                    g_orig_constructStaticInfo = (orig_constructStaticInfo_t)*got_entry;
+                }
+                long page_size = sysconf(_SC_PAGESIZE);
+                uintptr_t page_start = ((uintptr_t)got_entry) & ~(page_size - 1);
+                if (mprotect((void *)page_start, page_size, PROT_READ | PROT_WRITE) == 0) {
+                    *got_entry = (void *)my_constructStaticInfo;
+                    mprotect((void *)page_start, page_size, PROT_READ);
+                    ALOGI("Successfully hooked constructStaticInfo in %s to %p (orig=%p)",
+                          info->dlpi_name, my_constructStaticInfo, g_orig_constructStaticInfo);
+                    hooked = true;
+                } else {
+                    ALOGE("Failed to mprotect GOT entry at %p: %s", got_entry, strerror(errno));
+                }
+            } else {
+                hooked = true;
+            }
+        } else if (strcmp(name, "_ZN7android13ExynosCamera321processCaptureRequestEP23camera3_capture_request") == 0) {
+            void **got_entry = (void **)(base + rel[i].r_offset);
+            ALOGI("Found processCaptureRequest GOT entry in %s at %p (value=%p)",
+                  info->dlpi_name, got_entry, *got_entry);
+
+            if (*got_entry != (void *)my_processCaptureRequest) {
+                if (!g_orig_processCaptureRequest) {
+                    g_orig_processCaptureRequest = (orig_processCaptureRequest_t)*got_entry;
+                }
+                long page_size = sysconf(_SC_PAGESIZE);
+                uintptr_t page_start = ((uintptr_t)got_entry) & ~(page_size - 1);
+                if (mprotect((void *)page_start, page_size, PROT_READ | PROT_WRITE) == 0) {
+                    *got_entry = (void *)my_processCaptureRequest;
+                    mprotect((void *)page_start, page_size, PROT_READ);
+                    ALOGI("Successfully hooked processCaptureRequest in %s to %p (orig=%p)",
+                          info->dlpi_name, my_processCaptureRequest, g_orig_processCaptureRequest);
+                    hooked = true;
+                } else {
+                    ALOGE("Failed to mprotect GOT entry at %p: %s", got_entry, strerror(errno));
+                }
+            } else {
+                hooked = true;
+            }
+        } else if (strcmp(name, "_ZN7android13ExynosCamera313releaseDeviceEv") == 0) {
+            void **got_entry = (void **)(base + rel[i].r_offset);
+            ALOGI("Found releaseDevice GOT entry in %s at %p (value=%p)",
+                  info->dlpi_name, got_entry, *got_entry);
+
+            if (*got_entry != (void *)my_releaseDevice) {
+                if (!g_orig_releaseDevice) {
+                    g_orig_releaseDevice = (orig_releaseDevice_t)*got_entry;
+                }
+                long page_size = sysconf(_SC_PAGESIZE);
+                uintptr_t page_start = ((uintptr_t)got_entry) & ~(page_size - 1);
+                if (mprotect((void *)page_start, page_size, PROT_READ | PROT_WRITE) == 0) {
+                    *got_entry = (void *)my_releaseDevice;
+                    mprotect((void *)page_start, page_size, PROT_READ);
+                    ALOGI("Successfully hooked releaseDevice in %s to %p (orig=%p)",
+                          info->dlpi_name, my_releaseDevice, g_orig_releaseDevice);
                     hooked = true;
                 } else {
                     ALOGE("Failed to mprotect GOT entry at %p: %s", got_entry, strerror(errno));
@@ -650,5 +1140,6 @@ extern "C" void ensure_camera_hooks_installed() {
 __attribute__((constructor))
 static void init_stream_allocator_hook() {
     ALOGI("libexynoscamera_shim: constructor running...");
+    android_fdsan_set_error_level(ANDROID_FDSAN_ERROR_LEVEL_DISABLED);
     ensure_camera_hooks_installed();
 }

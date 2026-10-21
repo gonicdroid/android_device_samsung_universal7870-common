@@ -28,7 +28,9 @@ LOCAL_SHARED_LIBRARIES := \
     libui \
     liblog \
     libcutils \
-    libdl
+    libdl \
+    libcamera_metadata \
+    libandroid
 
 LOCAL_MODULE := libexynoscamera_shim
 LOCAL_MODULE_TAGS := optional

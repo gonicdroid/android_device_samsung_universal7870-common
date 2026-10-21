@@ -24,3 +24,19 @@ extern "C" int _ZN7android5Fence4waitEj(unsigned int timeout)
 }
 
 extern "C" void _ZN7android5FenceD1Ev() { }
+
+#include <android/looper.h>
+
+extern "C" ALooper *ALooper_forCamera() {
+    return ALooper_prepare(0);
+}
+
+extern "C" int ALooper_pollOnce_camera(int timeoutMillis, int* outFd, int* outEvents, void** outData) {
+    return ALooper_pollOnce(timeoutMillis, outFd, outEvents, outData);
+}
+
+extern "C" void ALooper_release_forCamera(ALooper* looper) {
+    if (looper) {
+        ALooper_release(looper);
+    }
+}
