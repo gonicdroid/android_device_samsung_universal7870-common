@@ -50,7 +50,6 @@ vendor/lib/egl/libGLES_mali.so;SYMLINK=vendor/lib/hw/vulkan.universal7870.so,ven
 vendor/lib/hw/sensors.universal7870_go.so:vendor/lib/hw/sensors.universal7870.so
 
 # Audio - A260GDDSCAUJ1
-vendor/lib/hw/audio.primary.universal7870_go.so:vendor/lib/hw/audio.primary.universal7870.so
 vendor/lib/libtinyalsa.so:vendor/lib/libtinyalsa_sec.so
 vendor/lib/libaudioroute.so
 vendor/lib/libvndsecril-client.so

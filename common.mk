@@ -44,10 +44,11 @@ PRODUCT_PACKAGES += \
     android.hardware.audio@2.0-impl \
     android.hardware.audio@2.0-service \
     android.hardware.audio.effect@2.0-impl \
-    audio.primary.universal7870_go \
+    audio.primary.universal7870 \
     audio.r_submix.default \
     audio.a2dp.default \
     audio.usb.default \
+    libsecril-client \
     libtinyalsa \
     libtinycompress
 
@@ -155,6 +156,7 @@ PRODUCT_PACKAGES += \
     android.hardware.radio.config@1.0 \
     android.hardware.radio.config@1.1 \
     android.hardware.radio.config@1.2 \
+    librilutils \
     libxml2
 
 # Sensors
