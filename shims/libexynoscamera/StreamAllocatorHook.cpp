@@ -30,6 +30,7 @@
 #include <pthread.h>
 #include <stdint.h>
 #include <android/fdsan.h>
+#include "FrontFlashHook.h"
 
 #undef LOG_TAG
 #define LOG_TAG "ExynosCameraShimHook"
@@ -194,6 +195,8 @@ extern "C" int my_configureStreams(void *this_ptr, camera3_stream_configuration_
 
     ALOGI("my_configureStreams: cam_id=%d, this=%p, params=%p, num_streams=%u",
           m_cameraId, this_ptr, m_parameters, stream_list->num_streams);
+
+    front_flash_on_configure_streams(m_cameraId, stream_list);
 
     camera3_stream_t *preview_stream = nullptr;
     camera3_stream_t *picture_stream = nullptr;
@@ -387,6 +390,8 @@ static bool hook_got_for_camera_lib(struct dl_phdr_info *info) {
             } else {
                 hooked = true;
             }
+        } else {
+            front_flash_hook_got(name, (void **)(base + rel[i].r_offset));
         }
     }
     return hooked;
@@ -443,7 +448,29 @@ extern "C" int my_stream_allocator_lock(
         addr[i] = nullptr;
     }
 
-    android::Rect bounds(width, height);
+    android::Rect bounds;
+    if (format == HAL_PIXEL_FORMAT_BLOB) {
+        // In Gralloc 3, private_handle_t has width at offset 40 and height at offset 44.
+        // For BLOB buffers, the framework allocates width = maxJpegBufferSize, height = 1.
+        uint32_t blob_size = *(uint32_t *)((char *)handle + 40);
+        if (blob_size == 0) {
+            blob_size = width * height;
+        }
+        bounds = android::Rect((int32_t)blob_size, 1);
+
+        // Samsung ExynosCamera3 HAL expects the allocated buffer size at offset 68 (0x44)
+        // of private_handle_t to write the camera3_jpeg_blob_t footer at:
+        //   addr[0] + handle->size[offset 68] - sizeof(camera3_jpeg_blob_t)
+        // Under Gralloc 3, offset 68 is the upper 32 bits of consumer_usage (0), which
+        // caused m_pushJpegResult to write at addr[0] - 8, crashing with SIGSEGV (SEGV_MAPERR).
+        *(uint32_t *)((char *)handle + 68) = blob_size;
+
+        ALOGI("%s: BLOB stream: alloc_w=%u, mapped bounds=(%u, 1), populated handle[68]=%u",
+              __FUNCTION__, *(uint32_t *)((char *)handle + 40), blob_size, blob_size);
+    } else {
+        bounds = android::Rect(width, height);
+    }
+
     uint32_t lockUsage = usage | GRALLOC_USAGE_SW_READ_OFTEN | GRALLOC_USAGE_SW_WRITE_OFTEN;
     android::status_t lockErr = android::NO_ERROR;
 
