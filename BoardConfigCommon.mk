@@ -146,7 +146,9 @@ TARGET_SCREEN_HEIGHT := 1280
 VENDOR_SECURITY_PATCH := 2023-03-01
 
 # Vendor separation
-TARGET_COPY_OUT_VENDOR := system/vendor
+TARGET_COPY_OUT_VENDOR := vendor
+BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE := squashfs
+BOARD_VENDORIMAGE_PARTITION_SIZE := 62914560
 
 # Verity
 # Only needed for signing
@@ -164,8 +166,6 @@ BOARD_USE_SAMSUNG_AUDIO := true
 # Shims
 TARGET_LD_SHIM_LIBS += \
     /vendor/lib/libexynoscamera.so|libexynoscamera_shim.so \
-    /system/vendor/lib/libexynoscamera.so|libexynoscamera_shim.so \
-    /vendor/lib/libexynoscamera3.so|libexynoscamera_shim.so \
-    /system/vendor/lib/libexynoscamera3.so|libexynoscamera_shim.so
+    /vendor/lib/libexynoscamera3.so|libexynoscamera_shim.so 
 
 
