@@ -50,7 +50,8 @@ PRODUCT_PACKAGES += \
     audio.usb.default \
     libsecril-client \
     libtinyalsa \
-    libtinycompress
+    libtinycompress \
+    libaudioroute
 
 # Bluetooth
 PRODUCT_PACKAGES += \

@@ -1,15 +1,10 @@
-# Hals are from Samsung's A260GDDSCAUJ1 Oreo stock firmware 
-# Also used M105MUBUACWC2 - Android 10
 # Device-specific libraries are detailed
-
 # Camera J710MNUBS4CTF2
 vendor/lib/libexynoscamera.so
 vendor/lib/libexynoscamera3.so
 
-# Camera common - A260GDDSCAUJ1
+# Camera common - M105MUBUACWC2
 vendor/lib/hw/camera.universal7870_go.so:vendor/lib/hw/camera.universal7870.so
-#vendor/lib/libhwjpeg.so
-#vendor/lib/libcsc.so
 vendor/lib/libstainkiller.so
 vendor/lib/libsecnativefeature.so
 vendor/lib/libuniplugin.so
@@ -49,24 +44,8 @@ vendor/lib/egl/libGLES_mali.so;SYMLINK=vendor/lib/hw/vulkan.universal7870.so,ven
 # Sensors - from J710MNUBS4CTF2
 vendor/lib/hw/sensors.universal7870_go.so:vendor/lib/hw/sensors.universal7870.so
 
-# Audio - A260GDDSCAUJ1
-vendor/lib/libtinyalsa.so:vendor/lib/libtinyalsa_sec.so
-vendor/lib/libaudioroute.so
-vendor/lib/libvndsecril-client.so
-vendor/lib/libaudio-ril.so
-vendor/lib/libsamsungDiamondVoice.so
-vendor/lib/libSamsungPostProcessConvertor.so
-vendor/lib/librecordalive.so
-vendor/lib/libpreprocessing_nxp.so
-vendor/lib/soundfx/libLifevibes_lvverx.so
-vendor/lib/soundfx/libLifevibes_lvvetx.so
-vendor/lib/libsecaudioinfo.so
-vendor/lib/lib_soundaliveresampler.so
-vendor/lib/lib_SamsungRec_06006.so
-vendor/lib/libLifevibes_lvverx.so
-vendor/lib/libLifevibes_lvvetx.so
+# Sec - A260GDDSCAUJ1
 vendor/lib/libfloatingfeature.so
-vendor/lib/lib_SoundAlive_SRC384_ver300.so
 
 # RIL - M105M (m10lte)
 vendor/bin/hw/rild
@@ -81,13 +60,7 @@ vendor/lib/libvndsecril-client.so
 vendor/lib/vendor.samsung.hardware.radio@2.0_vendor.so
 vendor/lib/vendor.samsung.hardware.radio.channel@2.0_vendor.so
 vendor/lib/vendor.samsung.hardware.radio.bridge@2.0_vendor.so
-
-# RIL - CP Boot Daemon - A260GDDSCAUJ1
 vendor/bin/hw/cbd
-
-# VNDK - A260GDDSCAUJ1
-vendor/lib/vndk-sp/libion.so
-vendor/lib/vndk-sp/libion.so:vendor/lib/libion.so
 
 # GPS - M105MUBUACWC2
 vendor/bin/hw/gpsd
@@ -102,42 +75,49 @@ vendor/etc/gnss/gps.cfg
 
 # NFC - J710MNUBS4CTF2
 vendor/firmware/sec_s3nrn80_firmware.bin
-vendor/lib/vendor.samsung.hardware.nfc@1.0.so
-vendor/lib/hw/nfc_nci.default.so
-vendor/lib/hw/android.hardware.nfc@1.0-impl.so
-vendor/lib/hw/vendor.samsung.hardware.nfc@1.0-impl.so
-vendor/bin/hw/vendor.samsung.hardware.nfc@1.0-service
-vendor/etc/init/vendor.samsung.hardware.nfc@1.0-service.rc
+vendor/etc/sec_s3nrn80_rfreg.bin
 
-# Trustonic Kinibi (MobiCore) TEE - J710MNUBS4CTF2
+# Trustonic Kinibi (MobiCore) TEE - M105MUBUACWC2 / A600GNUBUACVE2 (Android 10)
 vendor/bin/mcDriverDaemon
 vendor/lib/libMcClient.so
 vendor/lib/libMcRegistry.so
 
 # Trustlets (mcRegistry)
+vendor/app/mcRegistry/00060308060501020000000000000000.tlbin
 vendor/app/mcRegistry/07010000000000000000000000000000.tlbin
-vendor/app/mcRegistry/ffffffff00000000000000000000000a.tlbin
-vendor/app/mcRegistry/ffffffff000000000000000000000017.tlbin
-vendor/app/mcRegistry/ffffffff000000000000000000000073.tlbin
 vendor/app/mcRegistry/07060000000000000000000000000000.tlbin
-vendor/app/mcRegistry/ffffffff00000000000000000000000b.tlbin
-vendor/app/mcRegistry/ffffffff00000000000000000000002f.tlbin
-vendor/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin
 vendor/app/mcRegistry/08130000000000000000000000000000.tlbin
-vendor/app/mcRegistry/ffffffff00000000000000000000000f.tlbin
-vendor/app/mcRegistry/ffffffff000000000000000000000030.tlbin
-vendor/app/mcRegistry/ffffffffd00000000000000000000016.tlbin
 vendor/app/mcRegistry/FFFFFFFF000000000000000000000001.drbin
-vendor/app/mcRegistry/ffffffff000000000000000000000012.tlbin
-vendor/app/mcRegistry/ffffffff000000000000000000000038.tlbin
 vendor/app/mcRegistry/ffffffff000000000000000000000005.tlbin
+vendor/app/mcRegistry/ffffffff00000000000000000000000a.tlbin
+vendor/app/mcRegistry/ffffffff00000000000000000000000b.tlbin
+vendor/app/mcRegistry/ffffffff00000000000000000000000c.tlbin
+vendor/app/mcRegistry/ffffffff00000000000000000000000d.tlbin
+vendor/app/mcRegistry/ffffffff00000000000000000000000f.tlbin
+vendor/app/mcRegistry/ffffffff000000000000000000000012.tlbin
 vendor/app/mcRegistry/ffffffff000000000000000000000013.tlbin
+vendor/app/mcRegistry/ffffffff000000000000000000000017.tlbin
+vendor/app/mcRegistry/ffffffff00000000000000000000002e.tlbin
+vendor/app/mcRegistry/ffffffff00000000000000000000002f.tlbin
+vendor/app/mcRegistry/ffffffff000000000000000000000030.tlbin
+vendor/app/mcRegistry/ffffffff000000000000000000000038.tlbin
+vendor/app/mcRegistry/ffffffff00000000000000000000003e.tlbin
 vendor/app/mcRegistry/ffffffff000000000000000000000041.tlbin
+vendor/app/mcRegistry/ffffffff000000000000000000000045.tlbin
+vendor/app/mcRegistry/ffffffff000000000000000000000059.tlbin
+vendor/app/mcRegistry/ffffffff000000000000000000000060.tlbin
+vendor/app/mcRegistry/ffffffff000000000000000000000073.tlbin
+vendor/app/mcRegistry/ffffffff000000000000000000000077.tlbin
+vendor/app/mcRegistry/ffffffffd0000000000000000000000a.tlbin
+vendor/app/mcRegistry/ffffffffd0000000000000000000000e.tlbin
+vendor/app/mcRegistry/ffffffffd00000000000000000000014.tlbin
+vendor/app/mcRegistry/ffffffffd00000000000000000000016.tlbin
+vendor/app/mcRegistry/ffffffffd00000000000000000000062.tlbin
 
 # Security HALs - A260GDDSCAUJ1
 vendor/lib/hw/gatekeeper.exynos7870.so:vendor/lib/hw/gatekeeper.universal7870.so
 vendor/lib/hw/keystore.exynos7870.so:vendor/lib/hw/keystore.universal7870.so
 
-# TEE -A260GDDSCAUJ1
+# DRM - A260GDDSCAUJ1
 vendor/lib/libwvhidl.so
 vendor/lib/mediadrm/libwvdrmengine.so
