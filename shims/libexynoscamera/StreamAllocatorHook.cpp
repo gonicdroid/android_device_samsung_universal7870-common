@@ -89,13 +89,9 @@ extern "C" int my_getPreviewBayerCropSize(void *this_ptr, void *srcRect, void *d
     int previewH = *(int *)((char *)this_ptr + 32532);
     int hwPreviewW = *(int *)((char *)this_ptr + 32648);
     int hwPreviewH = *(int *)((char *)this_ptr + 32652);
-    int initRatioId = *(int *)((char *)this_ptr + 32656);
 
     int checkW = (previewW > 0) ? previewW : hwPreviewW;
     int checkH = (previewH > 0) ? previewH : hwPreviewH;
-
-    ALOGI("my_getPreviewBayerCropSize: enter: preview=%dx%d, hwPreview=%dx%d, initRatioId=%d",
-          previewW, previewH, hwPreviewW, hwPreviewH, initRatioId);
 
     if (checkW > 0 && checkH > 0) {
         int rId = get_ratio_id(checkW, checkH);
@@ -107,23 +103,20 @@ extern "C" int my_getPreviewBayerCropSize(void *this_ptr, void *srcRect, void *d
         *(int *)((char *)this_ptr + 32652) = expH;
         *(int *)((char *)this_ptr + 32528) = expW;
         *(int *)((char *)this_ptr + 32532) = expH;
-
-        ALOGI("my_getPreviewBayerCropSize: check=%dx%d -> hwPreview=%dx%d, ratioId=%d",
-              checkW, checkH, expW, expH, rId);
+    } else {
+        ALOGE("my_getPreviewBayerCropSize: invalid preview dimensions (%dx%d / hw %dx%d)",
+              previewW, previewH, hwPreviewW, hwPreviewH);
     }
 
     int ret = 0;
     if (fn_calcPreviewBayerCropSize) {
         ret = fn_calcPreviewBayerCropSize(this_ptr, srcRect, dstRect);
+        if (ret != 0) {
+            ALOGE("my_getPreviewBayerCropSize: fn_calcPreviewBayerCropSize returned error %d", ret);
+        }
     } else {
         ALOGE("my_getPreviewBayerCropSize: fn_calcPreviewBayerCropSize is NULL!");
         return -ENOSYS;
-    }
-
-    if (dstRect) {
-        int *d = (int *)dstRect;
-        ALOGI("my_getPreviewBayerCropSize: result dstRect=(%d, %d, %d, %d, full %dx%d)",
-              d[0], d[1], d[2], d[3], d[4], d[5]);
     }
 
     return ret;
@@ -143,21 +136,20 @@ extern "C" int my_getPictureBayerCropSize(void *this_ptr, void *srcRect, void *d
     if (checkW > 0 && checkH > 0) {
         int prId = get_ratio_id(checkW, checkH);
         *(int *)((char *)this_ptr + 32668) = prId;
-        ALOGI("my_getPictureBayerCropSize: check=%dx%d -> ratioId=%d", checkW, checkH, prId);
+    } else {
+        ALOGE("my_getPictureBayerCropSize: invalid pic dimensions (%dx%d / hw %dx%d)",
+              picW, picH, hwPicW, hwPicH);
     }
 
     int ret = 0;
     if (fn_calcPictureBayerCropSize) {
         ret = fn_calcPictureBayerCropSize(this_ptr, srcRect, dstRect);
+        if (ret != 0) {
+            ALOGE("my_getPictureBayerCropSize: fn_calcPictureBayerCropSize returned error %d", ret);
+        }
     } else {
         ALOGE("my_getPictureBayerCropSize: fn_calcPictureBayerCropSize is NULL!");
         return -ENOSYS;
-    }
-
-    if (dstRect) {
-        int *d = (int *)dstRect;
-        ALOGI("my_getPictureBayerCropSize: result dstRect=(%d, %d, %d, %d, full %dx%d)",
-              d[0], d[1], d[2], d[3], d[4], d[5]);
     }
 
     return ret;

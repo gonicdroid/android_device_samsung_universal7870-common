@@ -94,7 +94,7 @@ static void *front_flash_watchdog(void *arg) {
     return nullptr;
 }
 
-static void patch_front_camera_metadata(camera_metadata_t **info) {
+static void patch_camera_metadata(int cameraId, camera_metadata_t **info) {
     if (!info || !*info) return;
     camera_metadata_t *old_meta = *info;
 
@@ -103,49 +103,64 @@ static void patch_front_camera_metadata(camera_metadata_t **info) {
 
     camera_metadata_t *new_meta = allocate_camera_metadata(entry_count + 16, data_count + 256);
     if (!new_meta) {
-        ALOGE("patch_front_camera_metadata: allocate_camera_metadata failed");
+        ALOGE("patch_camera_metadata(cam%d): allocate_camera_metadata failed", cameraId);
         return;
     }
 
     if (append_camera_metadata(new_meta, old_meta) != 0) {
-        ALOGE("patch_front_camera_metadata: append_camera_metadata failed");
+        ALOGE("patch_camera_metadata(cam%d): append_camera_metadata failed", cameraId);
         free_camera_metadata(new_meta);
         return;
     }
 
-    // 1. ANDROID_FLASH_INFO_AVAILABLE = TRUE (1)
-    uint8_t flash_avail = ANDROID_FLASH_INFO_AVAILABLE_TRUE;
+    // 1. ALL CAMERAS: ANDROID_SENSOR_INFO_TIMESTAMP_SOURCE = REALTIME (1)
+    // Samsung Exynos 7870 camera kernel driver produces timestamps using ktime_get_boot_ns() (BOOTTIME).
+    // The legacy Samsung Oreo HAL statically declared UNKNOWN (0), causing Camera3Device not to calculate
+    // mTimestampOffset, leading to a 13-16s frozen first video frame in Stagefright/MPEG4Writer.
+    uint8_t timestamp_source = ANDROID_SENSOR_INFO_TIMESTAMP_SOURCE_REALTIME;
     camera_metadata_entry_t entry;
-    if (find_camera_metadata_entry(new_meta, ANDROID_FLASH_INFO_AVAILABLE, &entry) == 0) {
-        update_camera_metadata_entry(new_meta, entry.index, &flash_avail, 1, nullptr);
+    if (find_camera_metadata_entry(new_meta, ANDROID_SENSOR_INFO_TIMESTAMP_SOURCE, &entry) == 0) {
+        update_camera_metadata_entry(new_meta, entry.index, &timestamp_source, 1, nullptr);
     } else {
-        add_camera_metadata_entry(new_meta, ANDROID_FLASH_INFO_AVAILABLE, &flash_avail, 1);
+        add_camera_metadata_entry(new_meta, ANDROID_SENSOR_INFO_TIMESTAMP_SOURCE, &timestamp_source, 1);
     }
 
-    // 2. ANDROID_CONTROL_AE_AVAILABLE_MODES
-    uint8_t ae_modes[] = {
-        ANDROID_CONTROL_AE_MODE_OFF,
-        ANDROID_CONTROL_AE_MODE_ON,
-        ANDROID_CONTROL_AE_MODE_ON_AUTO_FLASH,
-        ANDROID_CONTROL_AE_MODE_ON_ALWAYS_FLASH
-    };
-    if (find_camera_metadata_entry(new_meta, ANDROID_CONTROL_AE_AVAILABLE_MODES, &entry) == 0) {
-        update_camera_metadata_entry(new_meta, entry.index, ae_modes, sizeof(ae_modes), nullptr);
-    } else {
-        add_camera_metadata_entry(new_meta, ANDROID_CONTROL_AE_AVAILABLE_MODES, ae_modes, sizeof(ae_modes));
-    }
+    // 2. FRONT CAMERA ONLY (cam 1): Flash configuration
+    if (cameraId == 1) {
+        // ANDROID_FLASH_INFO_AVAILABLE = TRUE (1)
+        uint8_t flash_avail = ANDROID_FLASH_INFO_AVAILABLE_TRUE;
+        if (find_camera_metadata_entry(new_meta, ANDROID_FLASH_INFO_AVAILABLE, &entry) == 0) {
+            update_camera_metadata_entry(new_meta, entry.index, &flash_avail, 1, nullptr);
+        } else {
+            add_camera_metadata_entry(new_meta, ANDROID_FLASH_INFO_AVAILABLE, &flash_avail, 1);
+        }
 
-    // 3. ANDROID_FLASH_INFO_CHARGE_DURATION
-    int64_t charge_duration = 0;
-    if (find_camera_metadata_entry(new_meta, ANDROID_FLASH_INFO_CHARGE_DURATION, &entry) == 0) {
-        update_camera_metadata_entry(new_meta, entry.index, &charge_duration, 1, nullptr);
-    } else {
-        add_camera_metadata_entry(new_meta, ANDROID_FLASH_INFO_CHARGE_DURATION, &charge_duration, 1);
+        // ANDROID_CONTROL_AE_AVAILABLE_MODES
+        uint8_t ae_modes[] = {
+            ANDROID_CONTROL_AE_MODE_OFF,
+            ANDROID_CONTROL_AE_MODE_ON,
+            ANDROID_CONTROL_AE_MODE_ON_AUTO_FLASH,
+            ANDROID_CONTROL_AE_MODE_ON_ALWAYS_FLASH
+        };
+        if (find_camera_metadata_entry(new_meta, ANDROID_CONTROL_AE_AVAILABLE_MODES, &entry) == 0) {
+            update_camera_metadata_entry(new_meta, entry.index, ae_modes, sizeof(ae_modes), nullptr);
+        } else {
+            add_camera_metadata_entry(new_meta, ANDROID_CONTROL_AE_AVAILABLE_MODES, ae_modes, sizeof(ae_modes));
+        }
+
+        // ANDROID_FLASH_INFO_CHARGE_DURATION
+        int64_t charge_duration = 0;
+        if (find_camera_metadata_entry(new_meta, ANDROID_FLASH_INFO_CHARGE_DURATION, &entry) == 0) {
+            update_camera_metadata_entry(new_meta, entry.index, &charge_duration, 1, nullptr);
+        } else {
+            add_camera_metadata_entry(new_meta, ANDROID_FLASH_INFO_CHARGE_DURATION, &charge_duration, 1);
+        }
     }
 
     free_camera_metadata(old_meta);
     *info = new_meta;
-    ALOGI("patch_front_camera_metadata: successfully injected flash info to front camera metadata!");
+    ALOGI("patch_camera_metadata(cam%d): successfully patched metadata (timestampSource=REALTIME%s)",
+          cameraId, (cameraId == 1) ? ", flashInfo=AVAILABLE" : "");
 }
 
 static int my_constructStaticInfo(int cameraId, camera_metadata_t **info) {
@@ -162,8 +177,8 @@ static int my_constructStaticInfo(int cameraId, camera_metadata_t **info) {
         }
     }
 
-    if (ret == 0 && cameraId == 1) {
-        patch_front_camera_metadata(info);
+    if (ret == 0) {
+        patch_camera_metadata(cameraId, info);
     }
     return ret;
 }
