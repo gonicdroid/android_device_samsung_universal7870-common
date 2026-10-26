@@ -63,6 +63,7 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     android.hardware.camera.provider@2.5-legacy \
     android.hardware.camera.provider@2.5-service \
+    libgui_vendor \
     libcsc \
     libhwjpeg \
     libexynoscamera_shim
@@ -100,8 +101,7 @@ PRODUCT_PACKAGES += \
     gralloc.exynos7870 \
     hwcomposer.exynos7870 \
     libGrallocWrapper \
-    libhwc2on1adapter \
-    vndk_sp_symlink
+    libhwc2on1adapter
 
 # Health
 PRODUCT_PACKAGES += \

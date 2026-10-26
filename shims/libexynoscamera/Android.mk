@@ -30,12 +30,13 @@ LOCAL_SHARED_LIBRARIES := \
     libcutils \
     libdl \
     libcamera_metadata \
-    libandroid
+    libutils
 
 LOCAL_MODULE := libexynoscamera_shim
 LOCAL_MODULE_TAGS := optional
 LOCAL_PROPRIETARY_MODULE := true
 LOCAL_MULTILIB := 32
+LOCAL_CFLAGS += -fvisibility=default
 LOCAL_LDFLAGS += -Wl,-z,global
 
 include $(BUILD_SHARED_LIBRARY)

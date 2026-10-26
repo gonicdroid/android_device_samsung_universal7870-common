@@ -22,6 +22,7 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
+#include <stdio.h>
 #include <pthread.h>
 #include <stdint.h>
 #include <fcntl.h>

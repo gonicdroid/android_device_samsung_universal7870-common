@@ -42,10 +42,5 @@ allow gpsd gps_vendor_data_file:file create_file_perms;
 allow gpsd gps_vendor_data_file:fifo_file create_file_perms;
 allow gpsd gps_vendor_data_file:sock_file create_file_perms;
 
-# /data/system/gps
-allow gpsd gps_data_file:dir create_dir_perms;
-allow gpsd gps_data_file:file create_file_perms;
-allow gpsd gps_data_file:fifo_file create_file_perms;
-
 # /system/etc/security/cacerts
 allow gpsd system_file:dir r_dir_perms;

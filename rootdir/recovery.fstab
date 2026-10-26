@@ -10,7 +10,7 @@
 /dev/block/platform/13540000.dwmmc0/by-name/BOOT          /boot       emmc    defaults                                                                      defaults
 /dev/block/platform/13540000.dwmmc0/by-name/RECOVERY      /recovery   emmc    defaults                                                                      defaults
 
-/dev/block/platform/13540000.dwmmc0/by-name/HIDDEN             /vendor     squashfs    defaults                                                                      defaults
+/dev/block/platform/13540000.dwmmc0/by-name/VENDOR             /vendor     ext4    defaults                                                                      defaults
 
 # VOLD
 /devices/13560000.dwmmc2/mmc_host/mmc*                      auto    vfat    defaults    voldmanaged=sdcard:auto

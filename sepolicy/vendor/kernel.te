@@ -23,4 +23,3 @@ allow kernel self:capability sys_module;
 
 allow kernel sysfs_input:dir search;
 allow kernel sysfs_input:file r_file_perms;
-allow kernel sysfs:file r_file_perms;

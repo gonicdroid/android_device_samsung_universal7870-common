@@ -58,7 +58,4 @@ allow system_server sysfs_input:file rw_file_perms;
 
 allow system_server proc_input_devices:file r_file_perms;
 
-# Vendor files (e.g. keylayout)
-allow system_server vendor_file:file r_file_perms;
-
 # unix_socket_connect(system_server, property, gpsd)

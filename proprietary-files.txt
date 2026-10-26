@@ -5,6 +5,7 @@ vendor/lib/libexynoscamera3.so
 
 # Camera common - M105MUBUACWC2
 vendor/lib/hw/camera.universal7870_go.so:vendor/lib/hw/camera.universal7870.so
+vendor/lib/libcamera_client.so
 vendor/lib/libstainkiller.so
 vendor/lib/libsecnativefeature.so
 vendor/lib/libuniplugin.so

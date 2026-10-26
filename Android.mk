@@ -18,12 +18,4 @@ LOCAL_PATH := $(call my-dir)
 
 ifneq ($(filter j7xelte j7velte, $(TARGET_DEVICE)),)
 include $(call all-makefiles-under,$(LOCAL_PATH))
-
-include $(CLEAR_VARS)
-LOCAL_MODULE := vndk_sp_symlink
-LOCAL_MODULE_CLASS := ETC
-LOCAL_MODULE_PATH := $(TARGET_OUT)/lib
-LOCAL_POST_INSTALL_CMD := ln -sf /system/lib $(TARGET_OUT)/lib/vndk-sp-29
-include $(BUILD_PHONY_PACKAGE)
-
 endif
