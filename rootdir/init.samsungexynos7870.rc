@@ -23,6 +23,14 @@ on post-fs-data
     # GnssConfiguration doesn't actually look at gps.conf, just the debug file
     mount none /system/etc/gps.conf /system/etc/gps_debug.conf bind
 
+    # Log data folder
+    mkdir /data/vendor 0771 root system
+    mkdir /data/vendor/log 0771 root system
+
+    # /efs/factory.prop for Dual / Single SIM settings
+    chown radio radio /mnt/vendor/efs/factory.prop
+    chmod 0600 /mnt/vendor/efs/factory.prop
+
     setprop vold.post_fs_data_done 1
 
 

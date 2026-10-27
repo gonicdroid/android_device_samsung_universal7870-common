@@ -1,0 +1,17 @@
+type secril_config, domain;
+type secril_config_exec, exec_type, vendor_file_type, file_type;
+
+init_daemon_domain(secril_config)
+
+
+# /efs/factory.prop and /efs/telephony.prop
+allow secril_config efs_file:dir r_dir_perms;
+allow secril_config efs_file:file r_file_perms;
+allow secril_config sec_efs_file:dir r_dir_perms;
+allow secril_config sec_efs_file:file r_file_perms;
+
+# Set radio properties (multisim config, network mode)
+set_prop(secril_config, radio_prop)
+
+# Ignore attempt to set core default_prop directly (init mirrors it from ro.vendor.multisim.simslotcount)
+dontaudit secril_config default_prop:property_service set;

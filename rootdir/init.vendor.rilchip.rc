@@ -19,5 +19,11 @@ service ril-daemon1 /vendor/bin/hw/rild -c 2 -l ${vendor.sec.rild.libpath2}
     capabilities BLOCK_SUSPEND NET_ADMIN NET_RAW SYS_ADMIN CHOWN DAC_READ_SEARCH
     onrestart restart cpboot-daemon
 
+on property:ro.vendor.multisim.simslotcount=1
+    stop ril-daemon1
+
 on property:ro.multisim.simslotcount=1
+    stop ril-daemon1
+
+on property:persist.radio.multisim.config=ss
     stop ril-daemon1
