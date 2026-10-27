@@ -1,3 +1,5 @@
 # hal_thermal_default.te
 r_dir_file(hal_thermal_default, sysfs_thermal)
 r_dir_file(hal_thermal_default, sysfs)
+
+allow hal_thermal_default self:netlink_kobject_uevent_socket create_socket_perms_no_ioctl;

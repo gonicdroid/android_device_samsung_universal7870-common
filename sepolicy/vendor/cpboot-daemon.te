@@ -9,14 +9,19 @@ set_prop(cpboot-daemon, modemloader_prop)
 
 allow cpboot-daemon self:capability { setuid setgid };
 
+# Allow cbd to execute vendor shell script/commands
+allow cpboot-daemon vendor_shell_exec:file rx_file_perms;
+allow cpboot-daemon vendor_toolbox_exec:file rx_file_perms;
+
 # FIXME neverallow rule
 # allow cpboot-daemon self:capability mknod;
 allow cpboot-daemon kernel:system syslog_read;
 allow cpboot-daemon cgroup:dir create_dir_perms;
 
-# /dev/log/*
-#allow cpboot-daemon log_device:dir r_dir_perms;
-#allow cpboot-daemon log_device:chr_file rw_file_perms;
+# /data/vendor/log
+allow cpboot-daemon log_vendor_data_file:dir rw_dir_perms;
+allow cpboot-daemon log_vendor_data_file:file create_file_perms;
+
 # /dev/kmsg (write to kernel log)
 allow cpboot-daemon kmsg_device:chr_file rw_file_perms;
 

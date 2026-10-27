@@ -172,6 +172,8 @@ on fs
     chmod 0771 /mnt/vendor/cpefs
     chown radio system /efs
     chmod 0771 /efs
+    chown radio system /cpefs
+    chmod 0771 /cpefs
 
     # Permissions for System LSI NFC
     # NFC : Permissions for NFC

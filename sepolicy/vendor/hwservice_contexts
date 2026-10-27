@@ -1,7 +1,13 @@
 vendor.samsung.hardware.nfc::ISecNfc                                  u:object_r:sec_nfc_hwservice:s0
 vendor.samsung_slsi.hardware.ExynosHWCServiceTW::IExynosHWCServiceTW   u:object_r:exynos_hwc_hwservice:s0
 vendor.samsung.hardware.radio::IRadio                                   u:object_r:sec_radio_hwservice:s0
+vendor.samsung.hardware.radio::ISehRadio                                u:object_r:sec_radio_hwservice:s0
 vendor.samsung.hardware.radio.secoemhook::ISecOemHook                  u:object_r:sec_radio_hwservice:s0
 vendor.samsung.hardware.radio.channel::ISecChannel                    u:object_r:sec_radio_hwservice:s0
+vendor.samsung.hardware.radio.channel::ISehChannel                    u:object_r:sec_radio_hwservice:s0
 vendor.samsung.hardware.radio.secbridge::ISecBridge                      u:object_r:sec_radio_hwservice:s0
+vendor.samsung.hardware.radio.bridge::ISehBridge                      u:object_r:sec_radio_hwservice:s0
 vendor.samsung.hardware.radio.sechook::IOemHook                         u:object_r:sec_radio_hwservice:s0
+vendor.samsung.hardware.gnss::ISehGnss                                  u:object_r:sec_gnss_hwservice:s0
+vendor.samsung.hardware.wifi.sec_hostapd::ISemHostapd                  u:object_r:sec_wifi_hwservice:s0
+vendor.samsung.security.skeymaster::ISKeymasterDevice                  u:object_r:sec_keymaster_hwservice:s0

@@ -12,6 +12,10 @@ allow hal_gnss_default gps_vendor_data_file:sock_file create_file_perms;
 # Connect to gpsd
 allow hal_gnss_default gpsd:unix_stream_socket connectto;
 
+# Samsung GNSS HW Service
+add_hwservice(hal_gnss_default, sec_gnss_hwservice)
+allow hal_gnss_default sec_gnss_hwservice:hwservice_manager find;
+
 # Sensor service
 allow hal_gnss_default fwk_sensor_hwservice:hwservice_manager find;
 

@@ -1,2 +1,8 @@
 # Allow all domains to search debugfs for ION memory and Mali GPU drivers
 allow domain { debugfs_ion debugfs_mali }:dir search;
+
+# Silence bionic linker LD_SHIM_LIBS access() check on vendor files
+dontaudit domain vendor_file:file { getattr read };
+
+# Silence servicemanager reading legacy vendor_service_contexts on Full Treble
+dontaudit servicemanager nonplat_service_contexts_file:file r_file_perms;

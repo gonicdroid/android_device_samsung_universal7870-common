@@ -8,3 +8,12 @@ type exynos_hwc_hwservice, hwservice_manager_type;
 
 # Samsung Radio
 type sec_radio_hwservice, hwservice_manager_type;
+
+# Samsung GNSS
+type sec_gnss_hwservice, hwservice_manager_type;
+
+# Samsung Wi-Fi hostapd
+type sec_wifi_hwservice, hwservice_manager_type;
+
+# Samsung Keymaster
+type sec_keymaster_hwservice, hwservice_manager_type;
