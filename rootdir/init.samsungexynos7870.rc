@@ -240,6 +240,8 @@ on fs
     # Permissions for touchscreen
     chown system radio /sys/class/sec/tsp/cmd
     chown system system /sys/class/sec/tsp/input/enabled
+    chown system system /sys/class/sec/tsp/sensitivity_mode
+    chmod 0660 /sys/class/sec/tsp/sensitivity_mode
 
     # Permissions for gpio_keys
     chown radio system /sys/class/sec/sec_key/wakeup_keys
