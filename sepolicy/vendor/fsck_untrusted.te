@@ -1,0 +1,2 @@
+# Allow fsck.exfat to check if SD card block device is read-only
+allowxperm fsck_untrusted vold_device:blk_file ioctl { BLKROGET };

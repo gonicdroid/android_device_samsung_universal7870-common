@@ -82,6 +82,7 @@ vendor/etc/sec_s3nrn80_rfreg.bin
 vendor/bin/mcDriverDaemon
 vendor/lib/libMcClient.so
 vendor/lib/libMcRegistry.so
+vendor/lib/hw/gatekeeper.exynos7870.so:vendor/lib/hw/gatekeeper.universal7870.so
 
 # Trustlets (mcRegistry)
 vendor/app/mcRegistry/00060308060501020000000000000000.tlbin
@@ -115,10 +116,11 @@ vendor/app/mcRegistry/ffffffffd00000000000000000000014.tlbin
 vendor/app/mcRegistry/ffffffffd00000000000000000000016.tlbin
 vendor/app/mcRegistry/ffffffffd00000000000000000000062.tlbin
 
-# Security HALs - A260GDDSCAUJ1
-vendor/lib/hw/gatekeeper.exynos7870.so:vendor/lib/hw/gatekeeper.universal7870.so
+# Keystore 0.3 - A260GDDSCAUJ1
 vendor/lib/hw/keystore.exynos7870.so:vendor/lib/hw/keystore.universal7870.so
 
-# DRM - A260GDDSCAUJ1
+# DRM - M105MUBUACWC2
+vendor/bin/hw/android.hardware.drm@1.2-service.widevine
+vendor/etc/init/android.hardware.drm@1.2-service.widevine.rc
 vendor/lib/libwvhidl.so
 vendor/lib/mediadrm/libwvdrmengine.so
