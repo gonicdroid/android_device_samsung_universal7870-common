@@ -315,6 +315,24 @@ PRODUCT_AAPT_PREF_CONFIG := xhdpi
 PRODUCT_CHARACTERISTICS := default
 DEVICE_PACKAGE_OVERLAYS += $(COMMON_PATH)/overlay
 
+# BPF
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.kernel.ebpf.supported=false
+
+# LMKD
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.lmk.use_minfree_levels=true \
+    ro.lmk.use_psi=false
+
+# APEX
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.apex.updatable=false
+
+# Networking
+PRODUCT_PROPERTY_OVERRIDES += \
+    net.dns1=8.8.8.8 \
+    net.dns2=8.8.4.4
+
 # Zygote fix for older Mali binaries
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.zygote.disable_gl_preload=1
@@ -338,6 +356,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # Graphics
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.opengles.version=196610 \
+    ro.hwui.use_vulkan=false \
     debug.hwc.otf=1 \
     debug.hwc.winupdate=1 \
     debug.hwc.nodirtyregion=1 \
@@ -347,7 +366,8 @@ PRODUCT_PROPERTY_OVERRIDES += \
 
 # GPU WFD support
 PRODUCT_PROPERTY_OVERRIDES += \
-    ro.exynos.vendor.wfdsupport=1
+    ro.exynos.vendor.wfdsupport=1 \
+    ro.hdcp2.rx=tz
 
 # RIL
 PRODUCT_PROPERTY_OVERRIDES += \
@@ -357,7 +377,9 @@ PRODUCT_PROPERTY_OVERRIDES += \
     vendor.sec.rild.libpath=/vendor/lib/libsec-ril.so \
     vendor.sec.rild.libpath2=/vendor/lib/libsec-ril-dsds.so \
     persist.radio.sib16_support=1 \
-    ro.telephony.default_network=9
+    ro.telephony.default_network=9 \
+    ro.vendor.radio.default_network=9 \
+    ro.carrier=unknown
 
 # SurfaceFlinger
 PRODUCT_PROPERTY_OVERRIDES += \

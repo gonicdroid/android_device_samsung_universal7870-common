@@ -1,3 +1,4 @@
+
 # RIL
 rild.libargs=-d /dev/umts_ipc0
 import /efs/factory.prop

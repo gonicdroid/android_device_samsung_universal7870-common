@@ -1,7 +1,1 @@
-# BPF
-ro.kernel.ebpf.supported=false
-
-# Userspace lmkd
-ro.lmk.use_minfree_levels=true
-ro.lmk.use_psi=false
 
