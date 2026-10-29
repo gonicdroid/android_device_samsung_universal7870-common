@@ -10,6 +10,7 @@
 /dev/block/platform/13540000.dwmmc0/by-name/CPEFS	/mnt/vendor/cpefs	ext4	noatime,nosuid,nodev,noauto_da_alloc,discard,journal_checksum,data=ordered,errors=panic	wait,check,nofail
 /dev/block/platform/13540000.dwmmc0/by-name/VENDOR	/vendor	ext4	ro	wait,first_stage_mount
 /dev/block/platform/13540000.dwmmc0/by-name/MISC	/misc	emmc	defaults	defaults
+/dev/block/zram0    none    swap    defaults    zramsize=1073741824,max_comp_streams=8
 
 # VOLD
 /devices/13560000.dwmmc2/mmc_host/mmc*			auto	vfat	defaults	voldmanaged=sdcard:auto
