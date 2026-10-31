@@ -239,12 +239,28 @@ on fs
     chown system radio /sys/class/sec/sec_touchkey/touchkey_irq_count
     chown system radio /sys/class/sec/sec_touchkey/touchkey_earjack
     chown system system /sys/class/sec/sec_touchkey/input/enabled
+    chmod 0660 /sys/class/sec/sec_touchkey/input/enabled
 
     # Permissions for touchscreen
     chown system radio /sys/class/sec/tsp/cmd
     chown system system /sys/class/sec/tsp/input/enabled
+    chmod 0660 /sys/class/sec/tsp/input/enabled
     chown system system /sys/class/sec/tsp/sensitivity_mode
     chmod 0660 /sys/class/sec/tsp/sensitivity_mode
+
+    # Permissions for input devices
+    chown system system /sys/class/input/input0/enabled
+    chown system system /sys/class/input/input1/enabled
+    chown system system /sys/class/input/input2/enabled
+    chown system system /sys/class/input/input3/enabled
+    chown system system /sys/class/input/input4/enabled
+    chown system system /sys/class/input/input5/enabled
+    chmod 0660 /sys/class/input/input0/enabled
+    chmod 0660 /sys/class/input/input1/enabled
+    chmod 0660 /sys/class/input/input2/enabled
+    chmod 0660 /sys/class/input/input3/enabled
+    chmod 0660 /sys/class/input/input4/enabled
+    chmod 0660 /sys/class/input/input5/enabled
 
     # Permissions for gpio_keys
     chown radio system /sys/class/sec/sec_key/wakeup_keys
