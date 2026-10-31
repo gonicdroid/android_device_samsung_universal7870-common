@@ -208,7 +208,7 @@ PRODUCT_PACKAGES += \
 
 # Audio XMLs
 PRODUCT_COPY_FILES += \
-    $(COMMON_PATH)/configs/audio/audio_effects_common.conf:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects_common.conf \
+    $(COMMON_PATH)/configs/audio/audio_effects.xml:$(TARGET_COPY_OUT_VENDOR)/etc/audio_effects.xml \
     $(COMMON_PATH)/configs/audio/default_volume_tables.xml:$(TARGET_COPY_OUT_VENDOR)/etc/default_volume_tables.xml \
     $(COMMON_PATH)/configs/audio/usb_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/usb_audio_policy_configuration.xml \
     $(COMMON_PATH)/configs/audio/a2dp_audio_policy_configuration.xml:$(TARGET_COPY_OUT_VENDOR)/etc/a2dp_audio_policy_configuration.xml \
@@ -344,7 +344,11 @@ PRODUCT_PROPERTY_OVERRIDES += \
     af.fast_track_multiplier=1 \
     ro.vendor.audio_hal.force_voice_config=wide \
     ro.config.media_vol_steps=25 \
-    ro.config.vc_call_vol_steps=7 
+    ro.config.vc_call_vol_steps=7
+
+# Fix echo in calls
+PRODUCT_PROPERTY_OVERRIDES += \
+    audio_hal.disable_two_mic=true
 
 # Bluetooth
 PRODUCT_PROPERTY_OVERRIDES += \
