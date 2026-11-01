@@ -11,3 +11,4 @@ vendor.samsung.hardware.radio.sechook::IOemHook                         u:object
 vendor.samsung.hardware.gnss::ISehGnss                                  u:object_r:sec_gnss_hwservice:s0
 vendor.samsung.hardware.wifi.sec_hostapd::ISemHostapd                  u:object_r:sec_wifi_hwservice:s0
 vendor.samsung.security.skeymaster::ISKeymasterDevice                  u:object_r:sec_keymaster_hwservice:s0
+vendor.lineage.power::ILineagePower                                     u:object_r:hal_power_hwservice:s0
