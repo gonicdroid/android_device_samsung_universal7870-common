@@ -294,7 +294,7 @@ PRODUCT_PACKAGES += \
     init.recovery.samsungexynos7870.rc \
     init.vendor.rilchip.rc \
     init.vendor.rilcommon.rc \
-    wifi.rc \
+    vendor_wifi.rc \
     wifi_brcm.rc \
     init.gps.rc \
     ueventd.samsungexynos7870.rc \
