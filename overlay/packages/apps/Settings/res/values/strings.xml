@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
+    <!-- xd. About Phone -->
+    <string name="xd_chipset_type_summary">Exynos 7870 Octa</string>
+    <string name="xd_gpu_summary">Mali-T830 MP1</string>
+
+    <!-- Maintainer -->
+    <string name="maintainer_name">Gonic</string>
+</resources>
+
