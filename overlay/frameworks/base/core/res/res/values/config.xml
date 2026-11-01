@@ -241,4 +241,15 @@
     <!-- Whether UI for multi user should be shown -->
     <bool name="config_enableMultiUserUI">false</bool>
 
+    <!-- Whether a software navigation bar should be shown -->
+    <bool name="config_showNavigationBar">false</bool>
+
+    <!-- Hardware keys present on the device:
+         1 (Home) + 2 (Back) + 16 (App switch) + 64 (Volume rocker) = 83 -->
+    <integer name="config_deviceHardwareKeys">83</integer>
+
+    <!-- Hardware keys able to wake device:
+         1 (Home) + 64 (Volume rocker) = 65 -->
+    <integer name="config_deviceHardwareWakeKeys">65</integer>
+
 </resources>
