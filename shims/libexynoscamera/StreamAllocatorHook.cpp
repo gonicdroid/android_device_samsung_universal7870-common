@@ -46,6 +46,242 @@ static void (*fn_getHwSensorSize)(void *params, int *w, int *h) = nullptr;
 static int (*fn_calcPreviewBayerCropSize)(void *this_ptr, void *srcRect, void *dstRect) = nullptr;
 static int (*fn_calcPictureBayerCropSize)(void *this_ptr, void *srcRect, void *dstRect) = nullptr;
 
+static int s_cam_preview_w[2] = {0, 0};
+static int s_cam_preview_h[2] = {0, 0};
+
+void stream_allocator_on_release_device(int cam_id) {
+    if (cam_id >= 0 && cam_id < 2) {
+        s_cam_preview_w[cam_id] = 0;
+        s_cam_preview_h[cam_id] = 0;
+    }
+}
+
+extern "C" void my_getMaxYuvSize(void *this_ptr, int *w, int *h) {
+    if (!this_ptr || !w || !h) return;
+    int cam_id = *(int *)((char *)this_ptr + 28);
+    int rawW = *(int *)((char *)this_ptr + 32632);
+    int rawH = *(int *)((char *)this_ptr + 32636);
+
+    if (cam_id >= 0 && cam_id < 2 && s_cam_preview_w[cam_id] > 0 && s_cam_preview_h[cam_id] > 0) {
+        *w = s_cam_preview_w[cam_id];
+        *h = s_cam_preview_h[cam_id];
+        ALOGI("my_getMaxYuvSize(cam%d): returning stream preview size %dx%d (raw was %dx%d)",
+              cam_id, *w, *h, rawW, rawH);
+    } else {
+        *w = rawW;
+        *h = rawH;
+        ALOGI("my_getMaxYuvSize(cam%d): returning raw maxYuv %dx%d", cam_id, *w, *h);
+    }
+}
+
+static int (*orig_pthread_mutex_lock)(pthread_mutex_t *mutex) = nullptr;
+static int (*orig_pthread_mutex_unlock)(pthread_mutex_t *mutex) = nullptr;
+
+extern "C" int my_pthread_mutex_lock(pthread_mutex_t *mutex) {
+    if (!mutex) return EINVAL;
+    if (*(uint16_t *)mutex == 0xffff) {
+        // Suppress Bionic fortify abort: mutex was destroyed, re-initialize it
+        pthread_mutex_init(mutex, nullptr);
+    }
+    if (orig_pthread_mutex_lock) {
+        return orig_pthread_mutex_lock(mutex);
+    }
+    return pthread_mutex_lock(mutex);
+}
+
+extern "C" int my_pthread_mutex_unlock(pthread_mutex_t *mutex) {
+    if (!mutex) return EINVAL;
+    if (*(uint16_t *)mutex == 0xffff) {
+        return 0;
+    }
+    if (orig_pthread_mutex_unlock) {
+        return orig_pthread_mutex_unlock(mutex);
+    }
+    return pthread_mutex_unlock(mutex);
+}
+
+extern "C" void* my_getFrameDoneFirstEntity(void *this_ptr, uint32_t pipeId) {
+    if (!this_ptr) return nullptr;
+
+    pthread_mutex_t *lock = (pthread_mutex_t *)this_ptr;
+    if (*(uint16_t *)lock == 0xffff) {
+        pthread_mutex_init(lock, nullptr);
+    }
+    pthread_mutex_lock(lock);
+
+    void *list_head = *(void **)((char *)this_ptr + 8);
+    if (!list_head) {
+        pthread_mutex_unlock(lock);
+        return nullptr;
+    }
+
+    void *node = *(void **)((char *)list_head + 8);
+    void *found_entity = nullptr;
+
+    while (node && node != list_head) {
+        void *entity = *(void **)((char *)node + 0);
+        if (entity) {
+            uint32_t state = *(uint32_t *)((char *)entity + 2348);
+            if (state >= 3 && state <= 6) {
+                if (state == 3 || state == 5) {
+                    uint32_t entity_pipe = *(uint32_t *)((char *)entity + 0);
+                    if (entity_pipe == pipeId) {
+                        found_entity = entity;
+                        break;
+                    }
+                } else if (state == 4 || state == 6) {
+                    void *sub_entity = *(void **)((char *)entity + 2356);
+                    if (sub_entity) {
+                        uint32_t sub_pipe = *(uint32_t *)((char *)sub_entity + 0);
+                        if (sub_pipe == pipeId) {
+                            found_entity = sub_entity;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        node = *(void **)((char *)node + 8);
+    }
+
+    pthread_mutex_unlock(lock);
+    return found_entity;
+}
+
+extern "C" void* my_getFrameDoneFirstEntity_noarg(void *this_ptr) {
+    if (!this_ptr) return nullptr;
+
+    pthread_mutex_t *lock = (pthread_mutex_t *)this_ptr;
+    if (*(uint16_t *)lock == 0xffff) {
+        pthread_mutex_init(lock, nullptr);
+    }
+    pthread_mutex_lock(lock);
+
+    void *list_head = *(void **)((char *)this_ptr + 8);
+    if (!list_head) {
+        pthread_mutex_unlock(lock);
+        return nullptr;
+    }
+
+    void *node = *(void **)((char *)list_head + 8);
+    void *found_entity = nullptr;
+
+    while (node && node != list_head) {
+        void *entity = *(void **)((char *)node + 0);
+        if (entity) {
+            uint32_t state = *(uint32_t *)((char *)entity + 2348);
+            if (state >= 3 && state <= 6) {
+                if (state == 3 || state == 5) {
+                    found_entity = entity;
+                    break;
+                } else if (state == 4 || state == 6) {
+                    void *sub_entity = *(void **)((char *)entity + 2356);
+                    if (sub_entity) {
+                        found_entity = sub_entity;
+                        break;
+                    }
+                }
+            }
+        }
+        node = *(void **)((char *)node + 8);
+    }
+
+    pthread_mutex_unlock(lock);
+    return found_entity;
+}
+
+extern "C" void* my_searchEntityByPipeId(void *this_ptr, uint32_t pipeId) {
+    if (!this_ptr) return nullptr;
+
+    pthread_mutex_t *lock = (pthread_mutex_t *)this_ptr;
+    if (*(uint16_t *)lock == 0xffff) {
+        pthread_mutex_init(lock, nullptr);
+    }
+    pthread_mutex_lock(lock);
+
+    void *list_head = *(void **)((char *)this_ptr + 8);
+    if (!list_head) {
+        pthread_mutex_unlock(lock);
+        return nullptr;
+    }
+
+    void *node = *(void **)((char *)list_head + 8);
+    void *found_entity = nullptr;
+
+    while (node && node != list_head) {
+        void *entity = *(void **)((char *)node + 0);
+        if (entity) {
+            void *curr = entity;
+            while (curr) {
+                uint32_t curr_pipe = *(uint32_t *)((char *)curr + 0);
+                if (curr_pipe == pipeId) {
+                    found_entity = curr;
+                    break;
+                }
+                curr = *(void **)((char *)curr + 2356);
+            }
+            if (found_entity) break;
+        }
+        node = *(void **)((char *)node + 8);
+    }
+
+    pthread_mutex_unlock(lock);
+    return found_entity;
+}
+
+extern "C" void* my_getFirstEntity(void *this_ptr) {
+    if (!this_ptr) return nullptr;
+
+    pthread_mutex_t *lock = (pthread_mutex_t *)this_ptr;
+    if (*(uint16_t *)lock == 0xffff) {
+        pthread_mutex_init(lock, nullptr);
+    }
+    pthread_mutex_lock(lock);
+
+    void *list_head = *(void **)((char *)this_ptr + 8);
+    if (!list_head) {
+        pthread_mutex_unlock(lock);
+        return nullptr;
+    }
+
+    void *node = *(void **)((char *)list_head + 8);
+    void *found_entity = nullptr;
+    if (node && node != list_head) {
+        *(void **)((char *)this_ptr + 12) = node;
+        found_entity = *(void **)((char *)node + 0);
+    }
+
+    pthread_mutex_unlock(lock);
+    return found_entity;
+}
+
+extern "C" void* my_getNextEntity(void *this_ptr) {
+    if (!this_ptr) return nullptr;
+
+    pthread_mutex_t *lock = (pthread_mutex_t *)this_ptr;
+    if (*(uint16_t *)lock == 0xffff) {
+        pthread_mutex_init(lock, nullptr);
+    }
+    pthread_mutex_lock(lock);
+
+    void *list_head = *(void **)((char *)this_ptr + 8);
+    void *curr_node = *(void **)((char *)this_ptr + 12);
+    if (!list_head || !curr_node) {
+        pthread_mutex_unlock(lock);
+        return nullptr;
+    }
+
+    void *node = *(void **)((char *)curr_node + 8);
+    void *found_entity = nullptr;
+    *(void **)((char *)this_ptr + 12) = node;
+    if (node && node != list_head) {
+        found_entity = *(void **)((char *)node + 0);
+    }
+
+    pthread_mutex_unlock(lock);
+    return found_entity;
+}
+
 static inline int get_ratio_id(int w, int h) {
     if (w <= 0 || h <= 0) return 1; // default to 4:3
     float r = (float)w / (float)h;
@@ -174,7 +410,11 @@ static void init_parameter_funcs() {
     }
 }
 
+extern "C" void ensure_camera_hooks_installed();
+
 extern "C" int my_configureStreams(void *this_ptr, camera3_stream_configuration_t *stream_list) {
+    ensure_camera_hooks_installed();
+
     if (!this_ptr || !stream_list) {
         if (g_orig_configureStreams) {
             return g_orig_configureStreams(this_ptr, stream_list);
@@ -234,6 +474,16 @@ extern "C" int my_configureStreams(void *this_ptr, camera3_stream_configuration_
         picture_stream = nullptr;
     }
 
+    if (m_cameraId >= 0 && m_cameraId < 2) {
+        if (preview_stream) {
+            s_cam_preview_w[m_cameraId] = preview_stream->width;
+            s_cam_preview_h[m_cameraId] = preview_stream->height;
+        } else {
+            s_cam_preview_w[m_cameraId] = 0;
+            s_cam_preview_h[m_cameraId] = 0;
+        }
+    }
+
     if (m_parameters) {
         init_parameter_funcs();
 
@@ -286,7 +536,8 @@ extern "C" int my_configureStreams(void *this_ptr, camera3_stream_configuration_
             }
         }
 
-        if (video_stream && fn_checkVideoSize) {
+        if (video_stream && fn_checkVideoSize &&
+            video_stream->width >= 640 && video_stream->height >= 480) {
             ALOGI("my_configureStreams: applying checkVideoSize(%u, %u)",
                   video_stream->width, video_stream->height);
             fn_checkVideoSize(m_parameters, video_stream->width, video_stream->height);
@@ -301,12 +552,23 @@ extern "C" int my_configureStreams(void *this_ptr, camera3_stream_configuration_
         }
     }
 
+    int ret = 0;
     if (g_orig_configureStreams) {
-        return g_orig_configureStreams(this_ptr, stream_list);
+        ret = g_orig_configureStreams(this_ptr, stream_list);
+    } else {
+        ALOGE("my_configureStreams: g_orig_configureStreams is NULL!");
+        return -ENOSYS;
     }
 
-    ALOGE("my_configureStreams: g_orig_configureStreams is NULL!");
-    return -ENOSYS;
+    if (ret == 0 && m_parameters && preview_stream) {
+        // Fix maxYuvSize overwritten by checkYuvSize inside g_orig_configureStreams
+        *(int *)((char *)m_parameters + 32632) = preview_stream->width;
+        *(int *)((char *)m_parameters + 32636) = preview_stream->height;
+        ALOGI("my_configureStreams(cam%d): fixed maxYuvSize to %ux%u",
+              m_cameraId, preview_stream->width, preview_stream->height);
+    }
+
+    return ret;
 }
 
 static inline uintptr_t resolve_ptr(Elf32_Addr base, Elf32_Addr ptr) {
@@ -316,9 +578,31 @@ static inline uintptr_t resolve_ptr(Elf32_Addr base, Elf32_Addr ptr) {
     return ptr;
 }
 
+static bool patch_got_entry(void **got_entry, void *new_func, void **orig_func) {
+    if (*got_entry != new_func) {
+        if (orig_func && !*orig_func) {
+            *orig_func = *got_entry;
+        }
+        long page_size = sysconf(_SC_PAGESIZE);
+        uintptr_t page_start = ((uintptr_t)got_entry) & ~(page_size - 1);
+        if (mprotect((void *)page_start, page_size, PROT_READ | PROT_WRITE) == 0) {
+            *got_entry = new_func;
+            mprotect((void *)page_start, page_size, PROT_READ);
+            return true;
+        } else {
+            ALOGE("patch_got_entry: Failed to mprotect GOT entry at %p: %s", got_entry, strerror(errno));
+            return false;
+        }
+    }
+    return true;
+}
+
 static bool hook_got_for_camera_lib(struct dl_phdr_info *info) {
     if (!info->dlpi_name) return false;
-    if (!strstr(info->dlpi_name, "camera.") && !strstr(info->dlpi_name, "camera/")) {
+    if (!strstr(info->dlpi_name, "camera.") &&
+        !strstr(info->dlpi_name, "camera/") &&
+        !strstr(info->dlpi_name, "libexynoscamera3.so") &&
+        !strstr(info->dlpi_name, "libexynoscamera.so")) {
         return false;
     }
 
@@ -359,31 +643,20 @@ static bool hook_got_for_camera_lib(struct dl_phdr_info *info) {
     for (size_t i = 0; i < rel_count; i++) {
         uint32_t sym_idx = ELF32_R_SYM(rel[i].r_info);
         const char *name = strtab + symtab[sym_idx].st_name;
-        if (strcmp(name, "_ZN7android13ExynosCamera316configureStreamsEP28camera3_stream_configuration") == 0) {
-            void **got_entry = (void **)(base + rel[i].r_offset);
-            ALOGI("Found configureStreams GOT entry in %s at %p (value=%p)",
-                  info->dlpi_name, got_entry, *got_entry);
+        void **got_entry = (void **)(base + rel[i].r_offset);
 
-            if (*got_entry != (void *)my_configureStreams) {
-                if (!g_orig_configureStreams) {
-                    g_orig_configureStreams = (orig_configureStreams_t)*got_entry;
-                }
-                long page_size = sysconf(_SC_PAGESIZE);
-                uintptr_t page_start = ((uintptr_t)got_entry) & ~(page_size - 1);
-                if (mprotect((void *)page_start, page_size, PROT_READ | PROT_WRITE) == 0) {
-                    *got_entry = (void *)my_configureStreams;
-                    mprotect((void *)page_start, page_size, PROT_READ);
-                    ALOGI("Successfully hooked configureStreams in %s to %p (orig=%p)",
+        if (strcmp(name, "_ZN7android13ExynosCamera316configureStreamsEP28camera3_stream_configuration") == 0) {
+            if (patch_got_entry(got_entry, (void *)my_configureStreams, (void **)&g_orig_configureStreams)) {
+                ALOGI("Successfully hooked configureStreams in %s to %p (orig=%p)",
                       info->dlpi_name, my_configureStreams, g_orig_configureStreams);
-                    hooked = true;
-                } else {
-                    ALOGE("Failed to mprotect GOT entry at %p: %s", got_entry, strerror(errno));
-                }
-            } else {
                 hooked = true;
             }
+        } else if (strcmp(name, "pthread_mutex_lock") == 0) {
+            patch_got_entry(got_entry, (void *)my_pthread_mutex_lock, (void **)&orig_pthread_mutex_lock);
+        } else if (strcmp(name, "pthread_mutex_unlock") == 0) {
+            patch_got_entry(got_entry, (void *)my_pthread_mutex_unlock, (void **)&orig_pthread_mutex_unlock);
         } else {
-            front_flash_hook_got(name, (void **)(base + rel[i].r_offset));
+            front_flash_hook_got(name, got_entry);
         }
     }
     return hooked;
@@ -632,11 +905,13 @@ static void hook_library(const char *lib_name) {
         const char *calc_prev_name = "_ZN7android23ExynosCamera3Parameters24calcPreviewBayerCropSizeEP10ExynosRectS2_";
         const char *get_pic_name = "_ZN7android23ExynosCamera3Parameters23getPictureBayerCropSizeEP10ExynosRectS2_";
         const char *calc_pic_name = "_ZN7android23ExynosCamera3Parameters24calcPictureBayerCropSizeEP10ExynosRectS2_";
+        const char *get_max_yuv_name = "_ZN7android23ExynosCamera3Parameters13getMaxYuvSizeEPiS1_";
 
         void *get_prev_fn = dlsym(handle, get_prev_name);
         void *calc_prev_fn = dlsym(handle, calc_prev_name);
         void *get_pic_fn = dlsym(handle, get_pic_name);
         void *calc_pic_fn = dlsym(handle, calc_pic_name);
+        void *get_max_yuv_fn = dlsym(handle, get_max_yuv_name);
 
         if (calc_prev_fn) {
             fn_calcPreviewBayerCropSize = (int (*)(void *, void *, void *))calc_prev_fn;
@@ -653,6 +928,49 @@ static void hook_library(const char *lib_name) {
         if (get_pic_fn && calc_pic_fn) {
             if (hook_thumb_function(get_pic_fn, (void *)my_getPictureBayerCropSize)) {
                 ALOGI("Successfully hooked %s:getPictureBayerCropSize at %p", lib_name, get_pic_fn);
+            }
+        }
+        if (get_max_yuv_fn) {
+            if (hook_thumb_function(get_max_yuv_fn, (void *)my_getMaxYuvSize)) {
+                ALOGI("Successfully hooked %s:getMaxYuvSize at %p", lib_name, get_max_yuv_fn);
+            }
+        }
+
+        const char *get_frame_done_name = "_ZN7android17ExynosCameraFrame23getFrameDoneFirstEntityEj";
+        const char *get_frame_done_noarg_name = "_ZN7android17ExynosCameraFrame23getFrameDoneFirstEntityEv";
+        const char *search_entity_name = "_ZN7android17ExynosCameraFrame20searchEntityByPipeIdEj";
+        const char *get_first_entity_name = "_ZN7android17ExynosCameraFrame14getFirstEntityEv";
+        const char *get_next_entity_name = "_ZN7android17ExynosCameraFrame13getNextEntityEv";
+
+        void *get_frame_done_fn = dlsym(handle, get_frame_done_name);
+        void *get_frame_done_noarg_fn = dlsym(handle, get_frame_done_noarg_name);
+        void *search_entity_fn = dlsym(handle, search_entity_name);
+        void *get_first_entity_fn = dlsym(handle, get_first_entity_name);
+        void *get_next_entity_fn = dlsym(handle, get_next_entity_name);
+
+        if (get_frame_done_fn) {
+            if (hook_thumb_function(get_frame_done_fn, (void *)my_getFrameDoneFirstEntity)) {
+                ALOGI("Successfully hooked %s:getFrameDoneFirstEntity(j) at %p", lib_name, get_frame_done_fn);
+            }
+        }
+        if (get_frame_done_noarg_fn) {
+            if (hook_thumb_function(get_frame_done_noarg_fn, (void *)my_getFrameDoneFirstEntity_noarg)) {
+                ALOGI("Successfully hooked %s:getFrameDoneFirstEntity() at %p", lib_name, get_frame_done_noarg_fn);
+            }
+        }
+        if (search_entity_fn) {
+            if (hook_thumb_function(search_entity_fn, (void *)my_searchEntityByPipeId)) {
+                ALOGI("Successfully hooked %s:searchEntityByPipeId at %p", lib_name, search_entity_fn);
+            }
+        }
+        if (get_first_entity_fn) {
+            if (hook_thumb_function(get_first_entity_fn, (void *)my_getFirstEntity)) {
+                ALOGI("Successfully hooked %s:getFirstEntity at %p", lib_name, get_first_entity_fn);
+            }
+        }
+        if (get_next_entity_fn) {
+            if (hook_thumb_function(get_next_entity_fn, (void *)my_getNextEntity)) {
+                ALOGI("Successfully hooked %s:getNextEntity at %p", lib_name, get_next_entity_fn);
             }
         }
     }

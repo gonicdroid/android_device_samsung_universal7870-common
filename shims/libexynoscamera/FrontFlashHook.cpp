@@ -35,15 +35,22 @@
 typedef int (*orig_constructStaticInfo_t)(int cameraId, camera_metadata_t **info);
 static orig_constructStaticInfo_t g_orig_constructStaticInfo = nullptr;
 
+typedef int (*orig_initilizeDevice_t)(void *this_ptr, const camera3_callback_ops_t *callback_ops);
+static orig_initilizeDevice_t g_orig_initilizeDevice = nullptr;
+
 typedef int (*orig_processCaptureRequest_t)(void *this_ptr, camera3_capture_request_t *request);
 static orig_processCaptureRequest_t g_orig_processCaptureRequest = nullptr;
 
 typedef int (*orig_releaseDevice_t)(void *this_ptr);
 static orig_releaseDevice_t g_orig_releaseDevice = nullptr;
 
+static void (*g_framework_process_capture_result)(const struct camera3_callback_ops *,
+        const camera3_capture_result_t *) = nullptr;
+
 static int s_cam1_flash_mode = 0;
 static int s_cam1_ae_mode = 1;
 static bool s_cam1_precapture_active = false;
+static int s_cam1_precapture_frame_count = 0;
 static int s_cam1_flash_firing = 0; // 0=off, 1=torch, 2=capture/pre-flash
 static int64_t s_cam1_capture_time_ms = 0;
 static camera3_stream_t *s_cam1_picture_stream = nullptr;
@@ -184,6 +191,58 @@ static int my_constructStaticInfo(int cameraId, camera_metadata_t **info) {
     return ret;
 }
 
+static void my_process_capture_result(const struct camera3_callback_ops *ops,
+        const camera3_capture_result_t *result)
+{
+    if (result && result->result && s_cam1_precapture_active) {
+        s_cam1_precapture_frame_count++;
+        camera_metadata_entry_t entry;
+        camera_metadata_t *meta = const_cast<camera_metadata_t *>(result->result);
+        if (find_camera_metadata_entry(meta, ANDROID_CONTROL_AE_STATE, &entry) == 0) {
+            if (s_cam1_precapture_frame_count < 3) {
+                uint8_t state = ANDROID_CONTROL_AE_STATE_PRECAPTURE;
+                update_camera_metadata_entry(meta, entry.index, &state, 1, nullptr);
+                ALOGI("my_process_capture_result(cam1): precapture frame %d -> AE_STATE_PRECAPTURE",
+                      s_cam1_precapture_frame_count);
+            } else {
+                uint8_t state = ANDROID_CONTROL_AE_STATE_CONVERGED;
+                update_camera_metadata_entry(meta, entry.index, &state, 1, nullptr);
+                ALOGI("my_process_capture_result(cam1): precapture frame %d -> AE_STATE_CONVERGED!",
+                      s_cam1_precapture_frame_count);
+                s_cam1_precapture_active = false;
+            }
+        }
+    }
+
+    if (g_framework_process_capture_result) {
+        g_framework_process_capture_result(ops, result);
+    }
+}
+
+static int my_initilizeDevice(void *this_ptr, const camera3_callback_ops_t *callback_ops) {
+    ALOGI("my_initilizeDevice: this=%p, callback_ops=%p", this_ptr, callback_ops);
+    if (callback_ops) {
+        if (!g_framework_process_capture_result &&
+            callback_ops->process_capture_result != my_process_capture_result) {
+            g_framework_process_capture_result = callback_ops->process_capture_result;
+        }
+
+        // In HIDL CameraDeviceSession, camera3_callback_ops is embedded directly
+        // inside the class, and callbacks downcast callback_ops to CameraDeviceSession*
+        // by calculating ((char*)ops - 4). We must NOT pass a separate wrapper struct;
+        // instead, we hook process_capture_result in place in the existing ops struct.
+        auto mutable_ops = const_cast<camera3_callback_ops_t *>(callback_ops);
+        long page_size = sysconf(_SC_PAGESIZE);
+        uintptr_t page_start = ((uintptr_t)&mutable_ops->process_capture_result) & ~(page_size - 1);
+        mprotect((void *)page_start, page_size, PROT_READ | PROT_WRITE);
+        mutable_ops->process_capture_result = my_process_capture_result;
+    }
+    if (g_orig_initilizeDevice) {
+        return g_orig_initilizeDevice(this_ptr, callback_ops);
+    }
+    return 0;
+}
+
 static int my_processCaptureRequest(void *this_ptr, camera3_capture_request_t *request) {
     if (this_ptr && request) {
         int cam_id = *(int *)((char *)this_ptr + 136);
@@ -203,6 +262,7 @@ static int my_processCaptureRequest(void *this_ptr, camera3_capture_request_t *r
                     precapture_trigger = entry.data.u8[0];
                     if (precapture_trigger == ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_START) {
                         s_cam1_precapture_active = true;
+                        s_cam1_precapture_frame_count = 0;
                     } else if (precapture_trigger == ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL) {
                         s_cam1_precapture_active = false;
                     }
@@ -217,18 +277,18 @@ static int my_processCaptureRequest(void *this_ptr, camera3_capture_request_t *r
 
             // Check if this request is a still capture
             bool is_capture = false;
-            for (uint32_t i = 0; i < request->num_output_buffers; i++) {
-                camera3_stream_t *s = request->output_buffers[i].stream;
-                if (!s) continue;
-                if (s == s_cam1_picture_stream ||
-                    s->format == HAL_PIXEL_FORMAT_BLOB ||
-                    (s_cam1_preview_stream && s != s_cam1_preview_stream)) {
-                    is_capture = true;
-                    break;
-                }
-            }
-            if (!is_capture && request->num_output_buffers > 1) {
+            if (capture_intent == ANDROID_CONTROL_CAPTURE_INTENT_STILL_CAPTURE) {
                 is_capture = true;
+            } else if (capture_intent != ANDROID_CONTROL_CAPTURE_INTENT_VIDEO_RECORD &&
+                       capture_intent != ANDROID_CONTROL_CAPTURE_INTENT_PREVIEW) {
+                for (uint32_t i = 0; i < request->num_output_buffers; i++) {
+                    camera3_stream_t *s = request->output_buffers[i].stream;
+                    if (!s) continue;
+                    if (s == s_cam1_picture_stream || s->format == HAL_PIXEL_FORMAT_BLOB) {
+                        is_capture = true;
+                        break;
+                    }
+                }
             }
 
             if (is_capture) {
@@ -314,7 +374,9 @@ static int my_releaseDevice(void *this_ptr) {
             set_front_flash(0);
             s_cam1_flash_firing = 0;
             s_cam1_precapture_active = false;
+            s_cam1_precapture_frame_count = 0;
         }
+        stream_allocator_on_release_device(cam_id);
     }
     if (!g_orig_releaseDevice) {
         void *h = dlopen("libexynoscamera3.so", RTLD_NOLOAD);
@@ -336,6 +398,7 @@ void front_flash_on_configure_streams(int cameraId, camera3_stream_configuration
     set_front_flash(0);
     s_cam1_flash_firing = 0;
     s_cam1_precapture_active = false;
+    s_cam1_precapture_frame_count = 0;
 
     s_cam1_picture_stream = nullptr;
     s_cam1_preview_stream = nullptr;
@@ -348,10 +411,6 @@ void front_flash_on_configure_streams(int cameraId, camera3_stream_configuration
 
         if (s->format == HAL_PIXEL_FORMAT_BLOB) {
             s_cam1_picture_stream = s;
-        } else if (s->format == HAL_PIXEL_FORMAT_YCbCr_420_888) {
-            if (!s_cam1_picture_stream || (s->width * s->height > s_cam1_picture_stream->width * s_cam1_picture_stream->height)) {
-                s_cam1_picture_stream = s;
-            }
         } else if (s->format == HAL_PIXEL_FORMAT_IMPLEMENTATION_DEFINED) {
             if (!s_cam1_preview_stream || (s->usage & (GRALLOC_USAGE_HW_COMPOSER | GRALLOC_USAGE_HW_TEXTURE))) {
                 s_cam1_preview_stream = s;
@@ -397,6 +456,11 @@ void front_flash_hook_got(const char *name, void **got_entry) {
         if (patch_got_entry(got_entry, (void *)my_constructStaticInfo, (void **)&g_orig_constructStaticInfo)) {
             ALOGI("Successfully hooked constructStaticInfo to %p (orig=%p)",
                   my_constructStaticInfo, g_orig_constructStaticInfo);
+        }
+    } else if (strcmp(name, "_ZN7android13ExynosCamera315initilizeDeviceEPK20camera3_callback_ops") == 0) {
+        if (patch_got_entry(got_entry, (void *)my_initilizeDevice, (void **)&g_orig_initilizeDevice)) {
+            ALOGI("Successfully hooked initilizeDevice to %p (orig=%p)",
+                  my_initilizeDevice, g_orig_initilizeDevice);
         }
     } else if (strcmp(name, "_ZN7android13ExynosCamera321processCaptureRequestEP23camera3_capture_request") == 0) {
         if (patch_got_entry(got_entry, (void *)my_processCaptureRequest, (void **)&g_orig_processCaptureRequest)) {

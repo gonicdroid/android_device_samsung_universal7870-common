@@ -21,5 +21,6 @@
 
 void front_flash_hook_got(const char *name, void **got_entry);
 void front_flash_on_configure_streams(int cameraId, camera3_stream_configuration_t *stream_list);
+void stream_allocator_on_release_device(int cam_id);
 
 #endif // FRONT_FLASH_HOOK_H
