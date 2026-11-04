@@ -1,0 +1,59 @@
+diff --git a/bta/ag/bta_ag_sco.cc b/bta/ag/bta_ag_sco.cc
+index 297d93d..1dca541 100644
+--- a/bta/ag/bta_ag_sco.cc
++++ b/bta/ag/bta_ag_sco.cc
+@@ -33,6 +33,7 @@
+ #include "device/include/esco_parameters.h"
+ #include "osi/include/osi.h"
+ #include "stack/include/btu.h"
++#include "stack/include/hcidefs.h"
+ #include "utl.h"
+ 
+ /* Codec negotiation timeout */
+@@ -480,6 +481,23 @@ static void bta_ag_create_pending_sco(tBTA_AG_SCB* p_scb, bool is_local) {
+   bta_ag_cb.sco.p_curr_scb = p_scb;
+   bta_ag_cb.sco.cur_idx = p_scb->sco_idx;
+ 
++  /* Configure Broadcom controller PCM clock and codec dynamically */
++  if (controller_get_interface()->get_bt_version()->manufacturer == LMP_COMPID_BROADCOM) {
++    if (esco_codec == BTA_AG_CODEC_MSBC) {
++      uint8_t wbs_enable_cmd[] = {0x01, 0x02, 0x00};
++      uint8_t i2spcm_cmd[] = {0x00, 0x00, 0x01, 0x02};
++      BTM_VendorSpecificCommand(0x007E, sizeof(wbs_enable_cmd), wbs_enable_cmd, NULL);
++      BTM_VendorSpecificCommand(0x006D, sizeof(i2spcm_cmd), i2spcm_cmd, NULL);
++      APPL_TRACE_WARNING("%s: Dynamic Broadcom SCO config: mSBC (16 kHz / 512 kHz clock)", __func__);
++    } else {
++      uint8_t wbs_disable_cmd[] = {0x00, 0x00, 0x00};
++      uint8_t i2spcm_cmd[] = {0x00, 0x00, 0x00, 0x01};
++      BTM_VendorSpecificCommand(0x007E, sizeof(wbs_disable_cmd), wbs_disable_cmd, NULL);
++      BTM_VendorSpecificCommand(0x006D, sizeof(i2spcm_cmd), i2spcm_cmd, NULL);
++      APPL_TRACE_WARNING("%s: Dynamic Broadcom SCO config: CVSD (8 kHz / 256 kHz clock)", __func__);
++    }
++  }
++
+   /* Local device requested SCO connection to peer */
+   if (is_local) {
+     if (esco_codec == BTA_AG_CODEC_MSBC) {
+diff --git a/btif/src/btif_hf.cc b/btif/src/btif_hf.cc
+index 4102cd1..fa3a70b 100644
+--- a/btif/src/btif_hf.cc
++++ b/btif/src/btif_hf.cc
+@@ -45,6 +45,7 @@
+ #include "btif_profile_queue.h"
+ #include "btif_util.h"
+ #include "common/metrics.h"
++#include "osi/include/properties.h"
+ 
+ namespace bluetooth {
+ namespace headset {
+@@ -511,7 +512,9 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
+       we should set the BTA AG Codec to mSBC. This would trigger a +BCS to mSBC
+       at the time
+       of SCO connection establishment */
+-      if ((btif_conf_hf_force_wbs == TRUE) && (p_data->val.num & BTA_AG_CODEC_MSBC)) {
++      if ((btif_conf_hf_force_wbs == TRUE) &&
++          !osi_property_get_bool("persist.bluetooth.force_nbs", false) &&
++          (p_data->val.num & BTA_AG_CODEC_MSBC)) {
+         BTIF_TRACE_EVENT("%s: btif_hf override-Preferred Codec to MSBC",
+                          __func__);
+         BTA_AgSetCodec(btif_hf_cb[idx].handle, BTA_AG_CODEC_MSBC);
