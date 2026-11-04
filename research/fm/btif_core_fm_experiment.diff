@@ -1,0 +1,149 @@
+diff --git a/btif/src/btif_core.cc b/btif/src/btif_core.cc
+index aa77979..374fe23 100644
+--- a/btif/src/btif_core.cc
++++ b/btif/src/btif_core.cc
+@@ -59,6 +59,113 @@
+ #include "btu.h"
+ #include "common/message_loop_thread.h"
+ #include "device/include/controller.h"
++#include "osi/include/properties.h"
++#include "stack/include/btm_api.h"
++#include "stack/include/hcidefs.h"
++#include <pthread.h>
++
++/* Broadcom FM Radio support */
++static pthread_t s_fm_monitor_thread;
++static volatile bool s_fm_thread_running = false;
++static int s_current_fm_freq = 0;
++
++static void broadcom_fm_write_reg(uint8_t reg, uint8_t val) {
++  uint8_t payload[3];
++  payload[0] = reg;
++  payload[1] = 0x01; // write flag
++  payload[2] = val;
++  BTM_VendorSpecificCommand(0x0015, sizeof(payload), payload, NULL);
++  usleep(10000);
++}
++
++static void broadcom_fm_write_reg2(uint8_t reg, uint16_t val) {
++  uint8_t payload[4];
++  payload[0] = reg;
++  payload[1] = 0x01; // write flag
++  payload[2] = (uint8_t)(val & 0xFF);        // LSB
++  payload[3] = (uint8_t)((val >> 8) & 0xFF); // MSB
++  BTM_VendorSpecificCommand(0x0015, sizeof(payload), payload, NULL);
++  usleep(10000);
++}
++
++static void broadcom_fm_tune(uint32_t freq_khz) {
++  LOG_INFO(LOG_TAG, "%s: Initializing and tuning Broadcom FM to %u kHz", __func__, freq_khz);
++
++  // 1. Audio pinmux (from Samsung stock btif_fm_enable)
++  uint8_t pinmux_cmd[] = {0x05, 0xF9, 0xF8, 0xF8, 0xF8};
++  BTM_VendorSpecificCommand(0x0061, sizeof(pinmux_cmd), pinmux_cmd, NULL);
++
++  usleep(250000); // 250ms per stock btif_fm_enable
++
++  // 2. Audio config
++  uint8_t aud_cfg[] = {0x01, 0x4A, 0x01, 0x4A, 0x00, 0x01, 0x00};
++  BTM_VendorSpecificCommand(0x03DC, sizeof(aud_cfg), aud_cfg, NULL);
++  usleep(20000);
++
++  // 3. Audio enable
++  uint8_t aud_enable[] = {0x01, 0x02, 0x00};
++  BTM_VendorSpecificCommand(0x007E, sizeof(aud_enable), aud_enable, NULL);
++  usleep(20000);
++
++  // 4. Power ON FM Core (Reg 0x00 = 0x01)
++  broadcom_fm_write_reg(0x00, 0x01);
++  usleep(100000); // 100ms
++
++  // Reg 0x01: FM_CTRL (Search/Audio control)
++  broadcom_fm_write_reg(0x01, 0x02);
++  // Reg 0x02: RDS_CTL0
++  broadcom_fm_write_reg(0x02, 0x02);
++
++  // 5. Audio routing: Reg 0x4D = 0x00 (analog DAC pins to COD3026X LINEIN)
++  broadcom_fm_write_reg(0x4D, 0x00);
++
++  // 6. Volume: Reg 0xF8 = 0x00FF (Max volume)
++  broadcom_fm_write_reg2(0xF8, 0x00FF);
++
++  // 7. Tune frequency: frequency in kHz - 64000
++  uint16_t freq_offset = (uint16_t)(freq_khz - 64000);
++  broadcom_fm_write_reg2(0x0A, freq_offset);
++
++  // 8. Trigger Direct Preset Tune: Reg 0x09 = 0x01
++  broadcom_fm_write_reg(0x09, 0x01);
++  usleep(100000); // 100ms for PLL lock
++
++  // 9. Unmute: Reg 0x05: DAC_L (0x04) | DAC_R (0x08) | ROUTE_DAC (0x10) | ROUTE_I2S (0x20) | DE_EMPHASIS (0x40) = 0x7C
++  // Unmuted (bit 0 RF mute=0, bit 1 audio mute=0).
++  broadcom_fm_write_reg2(0x05, 0x007C);
++
++  LOG_INFO(LOG_TAG, "%s: Broadcom FM tune complete for %u kHz (offset 0x%04X)", __func__, freq_khz, freq_offset);
++}
++
++static void broadcom_fm_power_off() {
++  LOG_INFO(LOG_TAG, "%s: Broadcom FM powering off", __func__);
++  // Mute (Reg 0x05 bit 1 = 1)
++  broadcom_fm_write_reg2(0x05, 0x0002);
++  // Power off FM core
++  broadcom_fm_write_reg(0x00, 0x00);
++}
++
++static void* broadcom_fm_monitor_loop(void* arg) {
++  LOG_INFO(LOG_TAG, "%s: Broadcom FM monitor thread started", __func__);
++  while (s_fm_thread_running) {
++    int freq = osi_property_get_int32("debug.fm.freq", 0);
++    if (freq == 0) freq = osi_property_get_int32("persist.bluetooth.fm_freq", 0);
++
++    if (freq != s_current_fm_freq) {
++      if (freq >= 64000 && freq <= 108000) {
++        broadcom_fm_tune((uint32_t)freq);
++        s_current_fm_freq = freq;
++      } else if (freq == 0 && s_current_fm_freq > 0) {
++        broadcom_fm_power_off();
++        s_current_fm_freq = 0;
++      }
++    }
++    usleep(250000);
++  }
++  LOG_INFO(LOG_TAG, "%s: Broadcom FM monitor thread stopped", __func__);
++  return NULL;
++}
++#include "device/include/controller.h"
+ #include "osi/include/fixed_queue.h"
+ #include "osi/include/future.h"
+ #include "osi/include/log.h"
+@@ -389,6 +496,14 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status) {
+     btif_dm_load_local_oob();
+ #endif
+ 
++    if (controller_get_interface()->get_bt_version()->manufacturer == LMP_COMPID_BROADCOM) {
++      if (!s_fm_thread_running) {
++        s_fm_thread_running = true;
++        s_current_fm_freq = 0;
++        pthread_create(&s_fm_monitor_thread, NULL, broadcom_fm_monitor_loop, NULL);
++      }
++    }
++
+     future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
+   } else {
+     /* cleanup rfcomm & l2cap api */
+@@ -416,6 +531,15 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status) {
+ bt_status_t btif_disable_bluetooth() {
+   LOG_INFO(LOG_TAG, "%s entered", __func__);
+ 
++  if (s_fm_thread_running) {
++    s_fm_thread_running = false;
++    pthread_join(s_fm_monitor_thread, NULL);
++    if (s_current_fm_freq > 0) {
++      broadcom_fm_power_off();
++      s_current_fm_freq = 0;
++    }
++  }
++
+   do_in_main_thread(FROM_HERE, base::Bind(&btm_ble_multi_adv_cleanup));
+   // TODO(jpawlowski): this should do whole BTA_VendorCleanup(), but it would
+   // kill the stack now.

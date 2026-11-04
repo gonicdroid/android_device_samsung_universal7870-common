@@ -1,0 +1,18 @@
+diff --git a/cmds/stagefright/Android.mk b/cmds/stagefright/Android.mk
+index 6eb2e9f..a27fd68 100644
+--- a/cmds/stagefright/Android.mk
++++ b/cmds/stagefright/Android.mk
+@@ -216,3 +216,13 @@ LOCAL_MODULE_TAGS := optional
+ LOCAL_MODULE:= muxer
+ 
+ include $(BUILD_EXECUTABLE)
++
++
++################################################################################
++
++include $(CLEAR_VARS)
++LOCAL_SRC_FILES := set_audio_params.cpp
++LOCAL_SHARED_LIBRARIES := libaudioclient libutils libbinder liblog
++LOCAL_MODULE := set_audio_params
++LOCAL_MODULE_TAGS := optional
++include $(BUILD_EXECUTABLE)
