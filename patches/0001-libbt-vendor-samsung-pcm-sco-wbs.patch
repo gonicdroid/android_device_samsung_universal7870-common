@@ -1,0 +1,203 @@
+diff --git a/include/bt_vendor_brcm.h b/include/bt_vendor_brcm.h
+index 5fc9bf8..414c794 100644
+--- a/include/bt_vendor_brcm.h
++++ b/include/bt_vendor_brcm.h
+@@ -438,6 +438,7 @@
+ extern bt_vendor_callbacks_t *bt_vendor_cbacks;
+ 
+ extern int hw_set_audio_state(bt_vendor_op_audio_state_t *p_state);
++extern int hw_pcm_pin_cfg(uint8_t enable);
+ 
+ #endif /* BT_VENDOR_BRCM_H */
+ 
+diff --git a/src/bt_vendor_brcm.c b/src/bt_vendor_brcm.c
+index d95c398..117034a 100644
+--- a/src/bt_vendor_brcm.c
++++ b/src/bt_vendor_brcm.c
+@@ -234,6 +234,12 @@ static int op(bt_vendor_opcode_t opcode, void *param)
+             }
+             break;
+ 
++        case 11: /* BT_VND_OP_PCM_PIN_CFG */
++            {
++                retval = hw_pcm_pin_cfg(*((uint8_t *)param));
++            }
++            break;
++
+         case BT_VND_OP_EPILOG:
+             {
+ #if (HW_END_WITH_HCI_RESET == FALSE)
+diff --git a/src/hardware.c b/src/hardware.c
+index f8ec118..9ab556b 100644
+--- a/src/hardware.c
++++ b/src/hardware.c
+@@ -93,6 +93,7 @@
+ #define HCI_VSC_WRITE_PCM_DATA_FORMAT_PARAM     0xFC1E
+ #define HCI_VSC_WRITE_I2SPCM_INTERFACE_PARAM    0xFC6D
+ #define HCI_VSC_ENABLE_WBS                      0xFC7E
++#define HCI_VSC_SET_PCM_PINS                    0xFC61
+ #define HCI_VSC_LAUNCH_RAM                      0xFC4E
+ #define HCI_READ_LOCAL_BDADDR                   0x1009
+ 
+@@ -107,6 +108,7 @@
+ #define BD_ADDR_LEN                             6
+ #define LOCAL_NAME_BUFFER_LEN                   32
+ #define LOCAL_BDADDR_PATH_BUFFER_LEN            256
++#define PCM_PINS_PARAM_SIZE                     5
+ 
+ #define STREAM_TO_UINT16(u16, p) {u16 = ((uint16_t)(*(p)) + (((uint16_t)(*((p) + 1))) << 8)); (p) += 2;}
+ #define UINT8_TO_STREAM(p, u8)   {*(p)++ = (uint8_t)(u8);}
+@@ -1164,6 +1166,101 @@ void hw_lpm_ctrl_cback(void *p_mem)
+ **   SCO Configuration Static Functions
+ *****************************************************************************/
+ 
++/*******************************************************************************
++**
++** Function         hw_pcm_pin_cfg_cback
++**
++** Description      Callback function for PCM pin configuration request
++**
++** Returns          None
++**
++*******************************************************************************/
++static void hw_pcm_pin_cfg_cback(void *p_mem)
++{
++    HC_BT_HDR   *p_evt_buf = (HC_BT_HDR *)p_mem;
++    uint8_t     status = *((uint8_t *)(p_evt_buf + 1) + HCI_EVT_CMD_CMPL_STATUS_RET_BYTE);
++
++    if (status != 0)
++    {
++        ALOGE("hw_pcm_pin_cfg failed with status 0x%02x", status);
++    }
++    else
++    {
++        ALOGI("hw_pcm_pin_cfg success");
++    }
++
++    /* Free the RX event buffer */
++    if (bt_vendor_cbacks)
++    {
++        bt_vendor_cbacks->dealloc(p_evt_buf);
++#if (BTHW_FW_EXTENDED_CONFIGURATION == TRUE)
++        bt_vendor_cbacks->fwcfg_cb(status == 0 ? BT_VND_OP_RESULT_SUCCESS : BT_VND_OP_RESULT_FAIL);
++        bt_vendor_cbacks->scocfg_cb(status == 0 ? BT_VND_OP_RESULT_SUCCESS : BT_VND_OP_RESULT_FAIL);
++#endif
++        bt_vendor_cbacks->audio_state_cb(status == 0 ? BT_VND_OP_RESULT_SUCCESS : BT_VND_OP_RESULT_FAIL);
++    }
++}
++
++/*******************************************************************************
++**
++** Function         hw_pcm_pin_cfg
++**
++** Description      Configure Broadcom PCM physical pins (VSC 0xFC61)
++**
++** Returns          0: Success, -1: Fail
++**
++*******************************************************************************/
++int hw_pcm_pin_cfg(uint8_t enable)
++{
++    HC_BT_HDR *p_buf = NULL;
++    uint8_t *p;
++    uint8_t ret;
++    uint16_t cmd_u16 = HCI_CMD_PREAMBLE_SIZE + PCM_PINS_PARAM_SIZE;
++
++    ALOGI("hw_pcm_pin_cfg: enable=%d", enable);
++
++    if (bt_vendor_cbacks)
++        p_buf = (HC_BT_HDR *)bt_vendor_cbacks->alloc(BT_HC_HDR_SIZE + cmd_u16);
++
++    if (p_buf)
++    {
++        p_buf->event = MSG_STACK_TO_HC_HCI_CMD;
++        p_buf->offset = 0;
++        p_buf->layer_specific = 0;
++        p_buf->len = cmd_u16;
++
++        p = (uint8_t *)(p_buf + 1);
++        UINT16_TO_STREAM(p, HCI_VSC_SET_PCM_PINS);
++        *p++ = PCM_PINS_PARAM_SIZE;
++
++        if (enable)
++        {
++            *p++ = 0x01;
++            *p++ = 0xb9;
++            *p++ = 0xb8;
++            *p++ = 0xb9;
++            *p++ = 0xb9;
++        }
++        else
++        {
++            *p++ = 0x00;
++            *p++ = 0xb9;
++            *p++ = 0xb8;
++            *p++ = 0xb8;
++            *p++ = 0xb8;
++        }
++
++        if ((ret = bt_vendor_cbacks->xmit_cb(HCI_VSC_SET_PCM_PINS, p_buf, hw_pcm_pin_cfg_cback)) == FALSE)
++        {
++            ALOGE("hw_pcm_pin_cfg: xmit_cb failed");
++            bt_vendor_cbacks->dealloc(p_buf);
++            return -1;
++        }
++        return 0;
++    }
++    return -1;
++}
++
+ /*******************************************************************************
+ **
+ ** Function         hw_sco_i2spcm_cfg_cback
+@@ -1195,8 +1292,7 @@ static void hw_sco_i2spcm_cfg_cback(void *p_mem)
+ 
+     if (status == BT_VND_OP_RESULT_SUCCESS)
+     {
+-        if ((opcode == HCI_VSC_WRITE_I2SPCM_INTERFACE_PARAM) &&
+-            (SCO_INTERFACE_PCM == sco_bus_interface))
++        if (opcode == HCI_VSC_WRITE_I2SPCM_INTERFACE_PARAM)
+         {
+             uint8_t ret = FALSE;
+ 
+@@ -1212,7 +1308,7 @@ static void hw_sco_i2spcm_cfg_cback(void *p_mem)
+                 p_buf->len = HCI_CMD_PREAMBLE_SIZE + SCO_PCM_PARAM_SIZE;
+                 p = (uint8_t *)(p_buf + 1);
+ 
+-                /* do we need this VSC for I2S??? */
++                /* Send VSC for SCO PCM config */
+                 UINT16_TO_STREAM(p, HCI_VSC_WRITE_SCO_PCM_INT_PARAM);
+                 *p++ = SCO_PCM_PARAM_SIZE;
+                 memcpy(p, &bt_sco_param, SCO_PCM_PARAM_SIZE);
+@@ -1229,8 +1325,7 @@ static void hw_sco_i2spcm_cfg_cback(void *p_mem)
+             }
+             status = BT_VND_OP_RESULT_FAIL;
+         }
+-        else if ((opcode == HCI_VSC_WRITE_SCO_PCM_INT_PARAM) &&
+-                 (SCO_INTERFACE_PCM == sco_bus_interface))
++        else if (opcode == HCI_VSC_WRITE_SCO_PCM_INT_PARAM)
+         {
+             uint8_t ret = FALSE;
+ 
+@@ -1265,13 +1360,21 @@ static void hw_sco_i2spcm_cfg_cback(void *p_mem)
+             }
+             status = BT_VND_OP_RESULT_FAIL;
+         }
++        else if (opcode == HCI_VSC_WRITE_PCM_DATA_FORMAT_PARAM)
++        {
++            /* Now configure PCM physical pins (0xFC61) */
++            if (hw_pcm_pin_cfg(1) == 0)
++                return;
++
++            status = BT_VND_OP_RESULT_FAIL;
++        }
+     }
+ 
+     ALOGI("sco I2S/PCM config result %d [0-Success, 1-Fail]", status);
+     if (bt_vendor_cbacks)
+     {
+ #if (BTHW_FW_EXTENDED_CONFIGURATION == TRUE)
+-        bt_vendor_cbacks->fwcfg_cb(BT_VND_OP_RESULT_SUCCESS);
++        bt_vendor_cbacks->fwcfg_cb(status);
+         bt_vendor_cbacks->scocfg_cb(status);
+ #endif
+         bt_vendor_cbacks->audio_state_cb(status);
