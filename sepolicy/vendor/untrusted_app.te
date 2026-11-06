@@ -1,0 +1,4 @@
+# Suppress harmless graphics sysfs denials from polling benchmarks/monitors
+dontaudit untrusted_app_all sysfs_graphics:dir search;
+dontaudit untrusted_app_all sysfs_graphics:file r_file_perms;
+

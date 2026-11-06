@@ -82,9 +82,17 @@ TARGET_KERNEL_ARCH := arm64
 TARGET_KERNEL_HEADER_ARCH := arm64
 TARGET_KERNEL_SOURCE := kernel/samsung/exynos7870
 TARGET_KERNEL_LLVM_BINUTILS := false
-KERNEL_TOOLCHAIN := $(shell pwd)/prebuilts/gcc/linux-x86/aarch64/linaro-7.5/bin
-#KERNEL_TOOLCHAIN := $(shell pwd)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin
-TARGET_KERNEL_CROSS_COMPILE_PREFIX := aarch64-linux-gnu-
+# Kernel Toolchain Selection: GCC 12.3 (Preferred) -> Linaro 7.5 -> Stock AOSP GCC 4.9
+ifneq ($(wildcard $(shell pwd)/prebuilts/gcc/linux-x86/aarch64/arm-gnu-12.3/bin/aarch64-none-linux-gnu-gcc),)
+    KERNEL_TOOLCHAIN := $(shell pwd)/prebuilts/gcc/linux-x86/aarch64/arm-gnu-12.3/bin
+    TARGET_KERNEL_CROSS_COMPILE_PREFIX := aarch64-none-linux-gnu-
+else ifneq ($(wildcard $(shell pwd)/prebuilts/gcc/linux-x86/aarch64/linaro-7.5/bin/aarch64-linux-gnu-gcc),)
+    KERNEL_TOOLCHAIN := $(shell pwd)/prebuilts/gcc/linux-x86/aarch64/linaro-7.5/bin
+    TARGET_KERNEL_CROSS_COMPILE_PREFIX := aarch64-linux-gnu-
+else
+    KERNEL_TOOLCHAIN := $(shell pwd)/prebuilts/gcc/linux-x86/aarch64/aarch64-linux-android-4.9/bin
+    TARGET_KERNEL_CROSS_COMPILE_PREFIX := aarch64-linux-android-
+endif
 TARGET_USES_64_BIT_BINDER := true
 
 # LIBHWJPEG
@@ -114,6 +122,7 @@ BOARD_VENDOR := samsung
 TARGET_BOARD_PLATFORM := universal7870
 TARGET_BOOTLOADER_BOARD_NAME := exynos7870
 TARGET_SOC := exynos7870
+QTI_OPTOUT := true
 include hardware/samsung_slsi-linaro/config/BoardConfig7870.mk
 
 TARGET_NO_BOOTLOADER := true
