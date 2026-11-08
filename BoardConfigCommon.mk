@@ -177,6 +177,8 @@ BOARD_USE_SAMSUNG_AUDIO := true
 # Shims
 TARGET_LD_SHIM_LIBS += \
     /vendor/lib/libexynoscamera.so|libexynoscamera_shim.so \
-    /vendor/lib/libexynoscamera3.so|libexynoscamera_shim.so 
+    /vendor/lib/libexynoscamera3.so|libexynoscamera_shim.so \
+    /vendor/lib/libsec-ril.so|libsecril_shim.so \
+    /vendor/lib/libsec-ril-dsds.so|libsecril_shim.so 
 
 
