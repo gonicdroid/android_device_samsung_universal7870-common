@@ -71,13 +71,22 @@ PRODUCT_PACKAGES += \
 
 # ConfigStore
 PRODUCT_PACKAGES += \
-    android.hardware.configstore@1.0-service
+    android.hardware.configstore@1.1-service
+
+# VNDK / HIDL Compat
+PRODUCT_PACKAGES += \
+    libhidltransport \
+    libhidltransport.vendor \
+    libhwbinder \
+    libhwbinder.vendor \
+    libprotobuf-cpp-lite-vendorcompat \
+    libprotobuf-cpp-full-vendorcompat
 
 # DRM
 PRODUCT_PACKAGES += \
     android.hardware.drm@1.0-impl \
     android.hardware.drm@1.0-service \
-    android.hardware.drm@1.2-service.clearkey
+    android.hardware.drm@1.3-service.clearkey
 
 # Gatekeeper 
 PRODUCT_PACKAGES += \
