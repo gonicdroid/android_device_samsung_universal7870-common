@@ -62,3 +62,10 @@ allow system_server proc_input_devices:file r_file_perms;
 dontaudit system_server sdcard_type:dir { read open };
 
 # unix_socket_connect(system_server, property, gpsd)
+
+# /proc/last_kmsg
+allow system_server proc_last_kmsg:file r_file_perms;
+
+# Userspace reboot properties
+get_prop(system_server, userspace_reboot_config_prop)
+get_prop(system_server, userspace_reboot_exported_prop)
