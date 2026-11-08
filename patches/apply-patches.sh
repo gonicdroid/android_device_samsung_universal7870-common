@@ -32,5 +32,6 @@ apply_patch() {
 
 echo "=== Checking universal7870 device tree patches ==="
 apply_patch "system/bt" "${PATCHES_DIR}/0002-system-bt-dynamic-sco-wbs-nbs.patch"
+apply_patch "system/keymaster" "${PATCHES_DIR}/0003-system-keymaster-fix-auth-token-size-check.patch"
 echo "=================================================="
 
