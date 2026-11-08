@@ -49,8 +49,12 @@ static void (*g_framework_process_capture_result)(const struct camera3_callback_
 
 static int s_cam1_flash_mode = 0;
 static int s_cam1_ae_mode = 1;
+static bool s_cam1_torch_active = false;
 static bool s_cam1_precapture_active = false;
-static int s_cam1_precapture_frame_count = 0;
+static uint32_t s_cam1_precapture_trigger_frame = 0;
+static int s_cam1_precapture_frames_seen = 0;
+static bool s_cam1_still_capture_in_flight = false;
+static uint32_t s_cam1_still_capture_frame = 0;
 static int s_cam1_flash_firing = 0; // 0=off, 1=torch, 2=capture/pre-flash
 static int64_t s_cam1_capture_time_ms = 0;
 static camera3_stream_t *s_cam1_picture_stream = nullptr;
@@ -81,21 +85,16 @@ static void set_front_flash(int val) {
 
 static void *front_flash_watchdog(void *arg) {
     (void)arg;
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 25; i++) {
         usleep(100000); // 100ms
         if (s_cam1_flash_firing != 2) break;
         int64_t elapsed = get_time_ms() - s_cam1_capture_time_ms;
-        if (!s_cam1_precapture_active && elapsed >= 300) {
-            ALOGI("front_flash_watchdog: capture elapsed %lld ms, turning OFF front flash", (long long)elapsed);
-            set_front_flash(0);
-            s_cam1_flash_firing = 0;
-            break;
-        }
-        if (elapsed > 2000) {
-            ALOGW("front_flash_watchdog: max timeout (2.0s) reached, turning OFF front flash");
+        if (elapsed > 2500) {
+            ALOGW("front_flash_watchdog: max timeout (2.5s) reached, turning OFF front flash");
             set_front_flash(0);
             s_cam1_flash_firing = 0;
             s_cam1_precapture_active = false;
+            s_cam1_still_capture_in_flight = false;
             break;
         }
     }
@@ -194,22 +193,64 @@ static int my_constructStaticInfo(int cameraId, camera_metadata_t **info) {
 static void my_process_capture_result(const struct camera3_callback_ops *ops,
         const camera3_capture_result_t *result)
 {
-    if (result && result->result && s_cam1_precapture_active) {
-        s_cam1_precapture_frame_count++;
-        camera_metadata_entry_t entry;
-        camera_metadata_t *meta = const_cast<camera_metadata_t *>(result->result);
-        if (find_camera_metadata_entry(meta, ANDROID_CONTROL_AE_STATE, &entry) == 0) {
-            if (s_cam1_precapture_frame_count < 3) {
-                uint8_t state = ANDROID_CONTROL_AE_STATE_PRECAPTURE;
-                update_camera_metadata_entry(meta, entry.index, &state, 1, nullptr);
-                ALOGI("my_process_capture_result(cam1): precapture frame %d -> AE_STATE_PRECAPTURE",
-                      s_cam1_precapture_frame_count);
-            } else {
-                uint8_t state = ANDROID_CONTROL_AE_STATE_CONVERGED;
-                update_camera_metadata_entry(meta, entry.index, &state, 1, nullptr);
-                ALOGI("my_process_capture_result(cam1): precapture frame %d -> AE_STATE_CONVERGED!",
-                      s_cam1_precapture_frame_count);
-                s_cam1_precapture_active = false;
+    if (result) {
+        uint32_t frame_num = result->frame_number;
+
+        // 1. Handle AE precapture state machine
+        if (result->result && s_cam1_precapture_active) {
+            // Only update AE state for frames starting from the precapture trigger frame
+            if (frame_num >= s_cam1_precapture_trigger_frame) {
+                camera_metadata_entry_t entry;
+                camera_metadata_t *meta = const_cast<camera_metadata_t *>(result->result);
+                if (find_camera_metadata_entry(meta, ANDROID_CONTROL_AE_STATE, &entry) == 0) {
+                    s_cam1_precapture_frames_seen++;
+                    if (s_cam1_precapture_frames_seen < 3) {
+                        uint8_t state = ANDROID_CONTROL_AE_STATE_PRECAPTURE;
+                        update_camera_metadata_entry(meta, entry.index, &state, 1, nullptr);
+                        ALOGI("my_process_capture_result(cam1): frame %u (count %d) -> AE_STATE_PRECAPTURE",
+                              frame_num, s_cam1_precapture_frames_seen);
+                    } else {
+                        uint8_t state = ANDROID_CONTROL_AE_STATE_CONVERGED;
+                        update_camera_metadata_entry(meta, entry.index, &state, 1, nullptr);
+                        ALOGI("my_process_capture_result(cam1): frame %u (count %d) -> AE_STATE_CONVERGED!",
+                              frame_num, s_cam1_precapture_frames_seen);
+                        s_cam1_precapture_active = false;
+                    }
+                }
+            }
+        }
+
+        // 2. Handle Still Capture completion
+        if (s_cam1_still_capture_in_flight) {
+            bool capture_done = false;
+
+            // Check if the picture output buffer was delivered in this result
+            for (uint32_t i = 0; i < result->num_output_buffers; i++) {
+                camera3_stream_t *s = result->output_buffers[i].stream;
+                if (s && (s == s_cam1_picture_stream || s->format == HAL_PIXEL_FORMAT_BLOB)) {
+                    capture_done = true;
+                    ALOGI("my_process_capture_result(cam1): picture buffer delivered in frame %u!", frame_num);
+                    break;
+                }
+            }
+
+            // Or if normal preview frames resume after the still capture frame
+            if (!capture_done && frame_num > s_cam1_still_capture_frame) {
+                int64_t elapsed = get_time_ms() - s_cam1_capture_time_ms;
+                if (elapsed >= 300) {
+                    capture_done = true;
+                    ALOGI("my_process_capture_result(cam1): frame %u > still capture %u (%lld ms elapsed), capture done",
+                          frame_num, s_cam1_still_capture_frame, (long long)elapsed);
+                }
+            }
+
+            if (capture_done) {
+                s_cam1_still_capture_in_flight = false;
+                if (!s_cam1_torch_active) {
+                    ALOGI("my_process_capture_result(cam1): still capture complete, turning OFF front flash");
+                    set_front_flash(0);
+                    s_cam1_flash_firing = 0;
+                }
             }
         }
     }
@@ -260,12 +301,6 @@ static int my_processCaptureRequest(void *this_ptr, camera3_capture_request_t *r
                 }
                 if (find_camera_metadata_ro_entry(request->settings, ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER, &entry) == 0) {
                     precapture_trigger = entry.data.u8[0];
-                    if (precapture_trigger == ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_START) {
-                        s_cam1_precapture_active = true;
-                        s_cam1_precapture_frame_count = 0;
-                    } else if (precapture_trigger == ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL) {
-                        s_cam1_precapture_active = false;
-                    }
                 }
                 if (find_camera_metadata_ro_entry(request->settings, ANDROID_CONTROL_CAPTURE_INTENT, &entry) == 0) {
                     capture_intent = entry.data.u8[0];
@@ -291,60 +326,101 @@ static int my_processCaptureRequest(void *this_ptr, camera3_capture_request_t *r
                 }
             }
 
-            if (is_capture) {
-                s_cam1_precapture_active = false;
-            }
-
             int64_t now_ms = get_time_ms();
 
-            // 1. TORCH mode (e.g. video or explicit torch)
-            if (s_cam1_flash_mode == ANDROID_FLASH_MODE_TORCH) {
-                set_front_flash(1);
-                s_cam1_flash_firing = 1;
-            } else if (s_cam1_flash_firing == 1 && s_cam1_flash_mode == ANDROID_FLASH_MODE_OFF) {
-                set_front_flash(0);
-                s_cam1_flash_firing = 0;
-            }
-
-            // 2. STILL CAPTURE / PRECAPTURE with FLASH
             bool flash_allowed = (s_cam1_ae_mode == ANDROID_CONTROL_AE_MODE_ON_ALWAYS_FLASH ||
                                   s_cam1_ae_mode == ANDROID_CONTROL_AE_MODE_ON_AUTO_FLASH ||
                                   s_cam1_flash_mode == ANDROID_FLASH_MODE_SINGLE);
 
-            if (s_cam1_flash_firing != 1 && flash_allowed) {
-                if (is_capture) {
-                    ALOGI("my_processCaptureRequest(cam1): still capture request! Firing front flash");
+            // 1. TORCH mode (e.g. video or explicit torch)
+            if (s_cam1_flash_mode == ANDROID_FLASH_MODE_TORCH) {
+                s_cam1_torch_active = true;
+                set_front_flash(1);
+                s_cam1_flash_firing = 1;
+            } else if (s_cam1_torch_active && s_cam1_flash_mode == ANDROID_FLASH_MODE_OFF) {
+                s_cam1_torch_active = false;
+                if (!s_cam1_precapture_active && !s_cam1_still_capture_in_flight) {
+                    set_front_flash(0);
+                    s_cam1_flash_firing = 0;
+                }
+            }
+
+            // 2. PRECAPTURE TRIGGER
+            if (precapture_trigger == ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_START && flash_allowed) {
+                s_cam1_precapture_active = true;
+                s_cam1_precapture_trigger_frame = request->frame_number;
+                s_cam1_precapture_frames_seen = 0;
+                s_cam1_capture_time_ms = now_ms;
+                s_cam1_flash_firing = 2;
+                set_front_flash(1);
+                ALOGI("my_processCaptureRequest(cam1): precapture trigger at frame %u! Turning front flash ON",
+                      request->frame_number);
+
+                pthread_t tid;
+                pthread_create(&tid, nullptr, front_flash_watchdog, nullptr);
+                pthread_detach(tid);
+            } else if (precapture_trigger == ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_CANCEL) {
+                s_cam1_precapture_active = false;
+                if (!s_cam1_torch_active && !s_cam1_still_capture_in_flight) {
+                    set_front_flash(0);
+                    s_cam1_flash_firing = 0;
+                    ALOGI("my_processCaptureRequest(cam1): precapture cancelled, front flash OFF");
+                }
+            }
+
+            // 3. STILL CAPTURE
+            if (is_capture) {
+                s_cam1_still_capture_in_flight = true;
+                s_cam1_still_capture_frame = request->frame_number;
+                s_cam1_precapture_active = false; // capture has been submitted
+
+                if (flash_allowed || s_cam1_flash_firing == 2) {
                     set_front_flash(1);
                     s_cam1_flash_firing = 2;
                     s_cam1_capture_time_ms = now_ms;
-                    s_cam1_precapture_active = false;
+                    ALOGI("my_processCaptureRequest(cam1): STILL CAPTURE at frame %u! Firing front flash",
+                          request->frame_number);
 
                     pthread_t tid;
                     pthread_create(&tid, nullptr, front_flash_watchdog, nullptr);
                     pthread_detach(tid);
-                } else if (s_cam1_precapture_active) {
-                    if (s_cam1_flash_firing != 2) {
-                        ALOGI("my_processCaptureRequest(cam1): precapture trigger active! Turning ON front flash");
-                        set_front_flash(1);
-                        s_cam1_flash_firing = 2;
-                        s_cam1_capture_time_ms = now_ms;
-
-                        pthread_t tid;
-                        pthread_create(&tid, nullptr, front_flash_watchdog, nullptr);
-                        pthread_detach(tid);
-                    }
                 }
             }
 
-            // 3. Turn off capture flash after capture duration has passed
-            if (s_cam1_flash_firing == 2) {
-                if (!s_cam1_precapture_active && !is_capture) {
-                    // Preview frame arriving after capture
-                    if (now_ms - s_cam1_capture_time_ms >= 250) {
-                        ALOGI("my_processCaptureRequest(cam1): capture complete (%lld ms elapsed), turning OFF front flash",
-                              (long long)(now_ms - s_cam1_capture_time_ms));
-                        set_front_flash(0);
-                        s_cam1_flash_firing = 0;
+            // 4. SANITIZE SETTINGS FOR SAMSUNG HAL (cam 1 only)
+            // Samsung's proprietary HAL tries to execute ExynosCameraActivityFlash for camera 1
+            // if it receives PRECAPTURE_TRIGGER_START or flash modes. Because camera 1 is fixed-focus
+            // (afState is always 0), the Samsung HAL's flash state machine gets permanently stuck in
+            // FLASH_STATUS_PRE_AE_DONE, overwriting AE_STATE with PRECAPTURE on every subsequent frame.
+            // By masking out precapture trigger and mapping flash modes to ON/OFF for camera 1,
+            // Samsung HAL operates in clean auto-exposure mode while our shim handles the front LED torch.
+            if (request->settings) {
+                camera_metadata_t *req_meta = const_cast<camera_metadata_t *>(request->settings);
+                camera_metadata_entry_t entry;
+
+                // Clear PRECAPTURE_TRIGGER so Samsung HAL does not start FLASH_STEP_PRE_START
+                if (find_camera_metadata_entry(req_meta, ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER, &entry) == 0) {
+                    if (entry.data.u8[0] == ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_START) {
+                        uint8_t idle = ANDROID_CONTROL_AE_PRECAPTURE_TRIGGER_IDLE;
+                        update_camera_metadata_entry(req_meta, entry.index, &idle, 1, nullptr);
+                    }
+                }
+
+                // Map flash AE modes to normal AE ON so Samsung HAL does not trigger flash management
+                if (find_camera_metadata_entry(req_meta, ANDROID_CONTROL_AE_MODE, &entry) == 0) {
+                    if (entry.data.u8[0] == ANDROID_CONTROL_AE_MODE_ON_ALWAYS_FLASH ||
+                        entry.data.u8[0] == ANDROID_CONTROL_AE_MODE_ON_AUTO_FLASH) {
+                        uint8_t on = ANDROID_CONTROL_AE_MODE_ON;
+                        update_camera_metadata_entry(req_meta, entry.index, &on, 1, nullptr);
+                    }
+                }
+
+                // Clear TORCH/SINGLE flash modes so Samsung HAL does not attempt ISP rear flash
+                if (find_camera_metadata_entry(req_meta, ANDROID_FLASH_MODE, &entry) == 0) {
+                    if (entry.data.u8[0] == ANDROID_FLASH_MODE_TORCH ||
+                        entry.data.u8[0] == ANDROID_FLASH_MODE_SINGLE) {
+                        uint8_t off = ANDROID_FLASH_MODE_OFF;
+                        update_camera_metadata_entry(req_meta, entry.index, &off, 1, nullptr);
                     }
                 }
             }
@@ -373,8 +449,10 @@ static int my_releaseDevice(void *this_ptr) {
             ALOGI("my_releaseDevice: cleaning up front flash");
             set_front_flash(0);
             s_cam1_flash_firing = 0;
+            s_cam1_torch_active = false;
             s_cam1_precapture_active = false;
-            s_cam1_precapture_frame_count = 0;
+            s_cam1_precapture_frames_seen = 0;
+            s_cam1_still_capture_in_flight = false;
         }
         stream_allocator_on_release_device(cam_id);
     }
@@ -397,8 +475,10 @@ void front_flash_on_configure_streams(int cameraId, camera3_stream_configuration
 
     set_front_flash(0);
     s_cam1_flash_firing = 0;
+    s_cam1_torch_active = false;
     s_cam1_precapture_active = false;
-    s_cam1_precapture_frame_count = 0;
+    s_cam1_precapture_frames_seen = 0;
+    s_cam1_still_capture_in_flight = false;
 
     s_cam1_picture_stream = nullptr;
     s_cam1_preview_stream = nullptr;
