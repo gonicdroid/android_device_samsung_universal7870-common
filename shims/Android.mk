@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 
-LOCAL_PATH := $(call my-dir)
+SHIM_PATH := $(call my-dir)
 
-include $(LOCAL_PATH)/libexynoscamera/Android.mk
+include $(SHIM_PATH)/libexynoscamera/Android.mk
+include $(SHIM_PATH)/libsecril/Android.mk

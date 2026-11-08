@@ -68,7 +68,8 @@ PRODUCT_PACKAGES += \
     libgui_vendor \
     libcsc \
     libhwjpeg \
-    libexynoscamera_shim
+    libexynoscamera_shim \
+    libsecril_shim
 
 # ConfigStore
 PRODUCT_PACKAGES += \
