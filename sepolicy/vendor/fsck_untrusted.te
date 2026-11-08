@@ -1,2 +1,5 @@
 # Allow fsck.exfat to check if SD card block device is read-only
 allowxperm fsck_untrusted vold_device:blk_file ioctl { BLKROGET };
+
+# Suppress harmless sysfs partition start offset read from fsck.exfat
+dontaudit fsck_untrusted sysfs:file { open read getattr };
