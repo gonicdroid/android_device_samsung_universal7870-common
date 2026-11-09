@@ -78,6 +78,18 @@
             <apply effect="aec"/>
             <apply effect="ns"/>
         </stream>
+        <stream type="camcorder">
+            <apply effect="agc"/>
+            <apply effect="ns"/>
+        </stream>
+        <stream type="mic">
+            <apply effect="agc"/>
+            <apply effect="ns"/>
+        </stream>
+        <stream type="voice_recognition">
+            <apply effect="agc"/>
+            <apply effect="ns"/>
+        </stream>
     </preprocess>
 
     <!-- Audio post processor configurations.
