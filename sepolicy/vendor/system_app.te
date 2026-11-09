@@ -4,6 +4,10 @@ allow system_app sysfs_graphics:dir search;
 allow system_app sysfs_graphics:file rw_file_perms;
 allow system_app wificond:binder call;
 
+# IMS Service (runs in system_app domain)
+binder_call(system_app, rild)
+get_prop(system_app, net_dns_prop)
+
 # Suppress harmless proc access & service lookups from Settings
 dontaudit system_app proc_pagetypeinfo:file r_file_perms;
 dontaudit system_app {

@@ -381,7 +381,11 @@ PRODUCT_PROPERTY_OVERRIDES += \
     persist.radio.sib16_support=1 \
     ro.telephony.default_network=9 \
     ro.vendor.radio.default_network=9 \
-    ro.carrier=unknown
+    ro.carrier=unknown \
+    persist.dbg.volte_avail_ovr=1 \
+    persist.dbg.vt_avail_ovr=1 \
+    persist.dbg.wfc_avail_ovr=1 \
+    persist.radio.rat_on=combine
 
 # SurfaceFlinger
 PRODUCT_PROPERTY_OVERRIDES += \

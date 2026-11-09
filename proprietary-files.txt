@@ -48,7 +48,7 @@ vendor/lib/hw/sensors.universal7870_go.so:vendor/lib/hw/sensors.universal7870.so
 # Sec - A260GDDSCAUJ1
 vendor/lib/libfloatingfeature.so
 
-# RIL - M105M (m10lte)
+# RIL - M105M (m10lte) M105MUBUACWC2
 vendor/bin/hw/rild
 vendor/bin/secril_config_svc
 vendor/lib/libsec-ril.so
@@ -62,6 +62,15 @@ vendor/lib/vendor.samsung.hardware.radio@2.0_vendor.so
 vendor/lib/vendor.samsung.hardware.radio.channel@2.0_vendor.so
 vendor/lib/vendor.samsung.hardware.radio.bridge@2.0_vendor.so
 vendor/bin/hw/cbd
+
+# IMS - M105M (m10lte) M105MUBUACWC2
+system/lib/libsec-ims.so
+system/lib/libaresdns.so
+system/lib/libcurl2.so
+system/lib/libmediarelayengine.so
+system/lib/libresampler_ims.so
+system/priv-app/imsservice/imsservice.apk
+system/etc/permissions/privapp-permissions-com.sec.imsservice.xml
 
 # GPS - M105MUBUACWC2
 vendor/bin/hw/gpsd

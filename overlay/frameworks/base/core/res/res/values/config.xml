@@ -252,4 +252,19 @@
          1 (Home) + 64 (Volume rocker) = 65 -->
     <integer name="config_deviceHardwareWakeKeys">65</integer>
 
+    <!-- Flag specifying whether VoLTE is available on the device -->
+    <bool name="config_device_volte_available">true</bool>
+
+    <!-- Flag specifying whether VT is available on the device -->
+    <bool name="config_device_vt_available">true</bool>
+
+    <!-- Flag specifying whether WFC is available on the device -->
+    <bool name="config_device_wfc_ims_available">true</bool>
+
+    <!-- Package name providing an ImsService implementation for MMTEL -->
+    <string name="config_ims_mmtel_package">com.sec.imsservice</string>
+
+    <!-- Package name providing an ImsService implementation for RCS -->
+    <string name="config_ims_rcs_package">com.sec.imsservice</string>
+
 </resources>
