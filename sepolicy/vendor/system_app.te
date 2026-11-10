@@ -6,7 +6,7 @@ allow system_app wificond:binder call;
 
 # IMS Service (runs in system_app domain)
 binder_call(system_app, rild)
-get_prop(system_app, net_dns_prop)
+dontaudit system_app net_dns_prop:file r_file_perms;
 
 # Suppress harmless proc access & service lookups from Settings
 dontaudit system_app proc_pagetypeinfo:file r_file_perms;

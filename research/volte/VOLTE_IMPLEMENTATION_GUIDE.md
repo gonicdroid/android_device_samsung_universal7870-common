@@ -387,7 +387,7 @@ binder_call(rild, system_app)
 **En `sepolicy/vendor/system_app.te`:**
 ```text
 binder_call(system_app, rild)
-get_prop(system_app, net_dns_prop)
+dontaudit system_app net_dns_prop:file r_file_perms;
 ```
 
 ---
