@@ -1,0 +1,3 @@
+# Allow phone/telephony process to resolve Samsung IMS services
+allow radio sec_ims_service:service_manager find;
+

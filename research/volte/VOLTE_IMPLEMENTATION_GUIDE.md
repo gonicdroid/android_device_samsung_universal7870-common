@@ -161,10 +161,13 @@ audio_hw_ril: ril_set_call_audio_path: SetCallAudioPath() failed, rc=7
 
 ### 3.3 Parche en `imsservice.apk` (Smali & JSON Universales)
 
-#### Modificaciones en Smali
+#### Modificaciones en `AndroidManifest.xml` y Smali
 Al desensamblar `imsservice.apk` con `apktool d`:
 
-1. **[`smali/com/sec/internal/ims/core/sim/SimManager.smali`](file:///tmp/imsservice_smali/smali/com/sec/internal/ims/core/sim/SimManager.smali):**
+1. **`AndroidManifest.xml` (Compatibilidad Dual Android 10 Q + Android 11 R):**
+   - El APK original de `M105MUBUACWC2` declara `minSdkVersion="30"` y `targetSdkVersion="30"`, lo que impide que PackageManager en Android 10 (API 29) lo parsee o instale. Ajustar `minSdkVersion="28"` y `targetSdkVersion="29"`, junto con `android:required="false"` en `<uses-library android:name="imsmanager"/>`, permite que el mismo APK funcione nativamente en LineageOS 17.1 y 18.1.
+
+2. **`smali/com/sec/internal/ims/core/sim/SimManager.smali` (Desbloqueo Universal de SIM):**
    - **`checkOutBoundSIM()Z`:**
      ```smali
      .method private checkOutBoundSIM()Z
@@ -183,6 +186,12 @@ Al desensamblar `imsservice.apk` con `apktool d`:
          return v0
      .end method
      ```
+
+3. **Backport de APIs exclusivas de Android 11 (API 30) para compatibilidad Q + R:**
+   - **`smali/com/sec/internal/ims/imsservice/ImsServiceStub.smali` (`linkToPhoneDeath()`):**  
+     Reemplazar `TelephonyFrameworkInitializer.getTelephonyServiceManager().getPhoneSubServiceRegisterer().tryGet()` (inexistente en API 29) por `ServiceManager.getService("iphonesubinfo")`.
+   - **`smali/com/sec/internal/ims/core/PdnController.smali` y `smali/com/sec/internal/ims/aec/util/PsDataOffExempt.smali`:**  
+     Reemplazar `TelephonyNetworkSpecifier$Builder` (API 30) por `NetworkRequest$Builder.setNetworkSpecifier(Integer.toString(subId))`, que en AOSP funciona en ambos `NetworkRequest` de Android 10 y 11.
 
 #### Modificaciones en Recursos JSON (`res/raw/`)
 1. **`res/raw/imsswitch.json` (también `imsswitch_open.json` e `imsswitch_tablet.json`):**
@@ -234,9 +243,10 @@ Si en el futuro se desea actualizar `imsservice` a una versión más reciente (p
 ```bash
 apktool d imsservice.apk -o imsservice_src
 ```
-1. Editar `smali/com/sec/internal/ims/core/sim/SimManager.smali` y forzar `checkOutBoundSIM` e `isOutBoundSIM` a retornar `0`.
-2. Editar los archivos JSON en `res/raw/` (`imsswitch.json`, `globalsettings.json`, `imsprofile.json`) aplicando los fallbacks universales descritos en la sección 3.3.
-3. Reensamblar y firmar:
+1. Editar `AndroidManifest.xml` (`minSdkVersion="28"`, `targetSdkVersion="29"`, `imsmanager` con `required="false"`).
+2. Editar `SimManager.smali` (forzar `checkOutBoundSIM` e `isOutBoundSIM` a retornar `0`) y aplicar los backports de `ImsServiceStub.smali`, `PdnController.smali` y `PsDataOffExempt.smali` descritos en la sección 3.3.
+3. Editar los archivos JSON en `res/raw/` (`imsswitch.json`, `globalsettings.json`, `imsprofile.json`) aplicando los fallbacks universales descritos en la sección 3.3.
+4. Reensamblar y firmar:
 ```bash
 # Empaquetar y zipalinear
 zipalign -p -f 4 imsservice_modified.apk imsservice_aligned.apk
@@ -320,7 +330,12 @@ if __name__ == '__main__':
 - `proprietary/system/lib/libcurl2.so`
 - `proprietary/system/lib/libmediarelayengine.so`
 - `proprietary/system/lib/libresampler_ims.so`
-- `proprietary/system/priv-app/imsservice/imsservice.apk`
+- `proprietary/system/lib/libSRTP.so` (dependencia transitiva de `libmediarelayengine.so`)
+- `proprietary/system/lib/libAudioTranscoder.so` (dependencia transitiva de `libmediarelayengine.so`)
+- `proprietary/system/lib/libevs_float.so` (dependencia transitiva de `libAudioTranscoder.so`)
+- `proprietary/system/framework/{EpdgManager,imsmanager,rcsopenapi,svemanager,vsimmanager}.jar` (JARs zipalineados a 4 bytes; `imsmanager.jar` incluye las clases `SemFloatingFeature`/`SemCscFeature`)
+- `proprietary/system/etc/permissions/{epdgmanager,imsmanager,rcsopenapi,svemanager}_library.xml` y `vsimservice_library.xml`
+- `proprietary/system/priv-app/imsservice/imsservice.apk` (APK universal Q+R con `minSdk=28` / `targetSdk=29`)
 - `proprietary/system/etc/permissions/privapp-permissions-com.sec.imsservice.xml`
 
 **En `Android.mk`:**
@@ -346,6 +361,19 @@ PRODUCT_COPY_FILES += \
     vendor/samsung/universal7870-common/proprietary/system/lib/libcurl2.so:$(TARGET_COPY_OUT_SYSTEM)/lib/libcurl2.so \
     vendor/samsung/universal7870-common/proprietary/system/lib/libmediarelayengine.so:$(TARGET_COPY_OUT_SYSTEM)/lib/libmediarelayengine.so \
     vendor/samsung/universal7870-common/proprietary/system/lib/libresampler_ims.so:$(TARGET_COPY_OUT_SYSTEM)/lib/libresampler_ims.so \
+    vendor/samsung/universal7870-common/proprietary/system/lib/libSRTP.so:$(TARGET_COPY_OUT_SYSTEM)/lib/libSRTP.so \
+    vendor/samsung/universal7870-common/proprietary/system/lib/libAudioTranscoder.so:$(TARGET_COPY_OUT_SYSTEM)/lib/libAudioTranscoder.so \
+    vendor/samsung/universal7870-common/proprietary/system/lib/libevs_float.so:$(TARGET_COPY_OUT_SYSTEM)/lib/libevs_float.so \
+    vendor/samsung/universal7870-common/proprietary/system/framework/EpdgManager.jar:$(TARGET_COPY_OUT_SYSTEM)/framework/EpdgManager.jar \
+    vendor/samsung/universal7870-common/proprietary/system/framework/imsmanager.jar:$(TARGET_COPY_OUT_SYSTEM)/framework/imsmanager.jar \
+    vendor/samsung/universal7870-common/proprietary/system/framework/rcsopenapi.jar:$(TARGET_COPY_OUT_SYSTEM)/framework/rcsopenapi.jar \
+    vendor/samsung/universal7870-common/proprietary/system/framework/svemanager.jar:$(TARGET_COPY_OUT_SYSTEM)/framework/svemanager.jar \
+    vendor/samsung/universal7870-common/proprietary/system/framework/vsimmanager.jar:$(TARGET_COPY_OUT_SYSTEM)/framework/vsimmanager.jar \
+    vendor/samsung/universal7870-common/proprietary/system/etc/permissions/epdgmanager_library.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/epdgmanager_library.xml \
+    vendor/samsung/universal7870-common/proprietary/system/etc/permissions/imsmanager_library.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/imsmanager_library.xml \
+    vendor/samsung/universal7870-common/proprietary/system/etc/permissions/rcsopenapi_library.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/rcsopenapi_library.xml \
+    vendor/samsung/universal7870-common/proprietary/system/etc/permissions/svemanager_library.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/svemanager_library.xml \
+    vendor/samsung/universal7870-common/proprietary/system/etc/permissions/vsimservice_library.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/vsimservice_library.xml \
     vendor/samsung/universal7870-common/proprietary/system/etc/permissions/privapp-permissions-com.sec.imsservice.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/privapp-permissions-com.sec.imsservice.xml
 
 PRODUCT_PACKAGES += \
@@ -379,14 +407,25 @@ PRODUCT_PROPERTY_OVERRIDES += \
     persist.radio.rat_on=combine
 ```
 
+**En `BoardConfigCommon.mk` y `sepolicy/private/` (SELinux Enforcing para `ImsBase` y `secims`):**
+- `BoardConfigCommon.mk`: añadir `BOARD_PLAT_PRIVATE_SEPOLICY_DIR += $(COMMON_PATH)/sepolicy/private`
+- `sepolicy/private/service.te`: `type sec_ims_service, app_api_service, service_manager_type;`
+- `sepolicy/private/service_contexts`: mapear `ImsBase` y `secims` a `u:object_r:sec_ims_service:s0`
+- `sepolicy/private/system_app.te`: `add_service(system_app, sec_ims_service)`
+- `sepolicy/private/radio.te`: `allow radio sec_ims_service:service_manager find;`
+- `sepolicy/private/system_server.te`: `allow system_server sec_ims_service:service_manager find;`
+
 **En `sepolicy/vendor/rild.te`:**
 ```text
+allow rild radio_data_file:dir create_dir_perms;
+allow rild radio_data_file:file create_file_perms;
 binder_call(rild, system_app)
 ```
 
 **En `sepolicy/vendor/system_app.te`:**
 ```text
 binder_call(system_app, rild)
+allow system_app sec_radio_hwservice:hwservice_manager find;
 dontaudit system_app net_dns_prop:file r_file_perms;
 ```
 

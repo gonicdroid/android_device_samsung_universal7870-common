@@ -53,7 +53,8 @@ allow rild bin_nv_data_efs_file:file { rw_file_perms setattr unlink ioctl };
 allowxperm rild bin_nv_data_efs_file:file ioctl { 0x6601 0x6602 };
 
 # /data/misc/radio
-r_dir_file(rild, radio_data_file)
+allow rild radio_data_file:dir create_dir_perms;
+allow rild radio_data_file:file create_file_perms;
 
 # /proc/net/xt_qtaguid/iface_stat_fmt
 # allow rild proc_qtaguid_stat:file r_file_perms;

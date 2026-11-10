@@ -6,6 +6,7 @@ allow system_app wificond:binder call;
 
 # IMS Service (runs in system_app domain)
 binder_call(system_app, rild)
+allow system_app sec_radio_hwservice:hwservice_manager find;
 dontaudit system_app net_dns_prop:file r_file_perms;
 
 # Suppress harmless proc access & service lookups from Settings

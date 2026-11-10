@@ -69,6 +69,19 @@ system/lib/libaresdns.so
 system/lib/libcurl2.so
 system/lib/libmediarelayengine.so
 system/lib/libresampler_ims.so
+system/lib/libSRTP.so
+system/lib/libAudioTranscoder.so
+system/lib/libevs_float.so
+system/framework/EpdgManager.jar
+system/framework/imsmanager.jar
+system/framework/rcsopenapi.jar
+system/framework/svemanager.jar
+system/framework/vsimmanager.jar
+system/etc/permissions/epdgmanager_library.xml
+system/etc/permissions/imsmanager_library.xml
+system/etc/permissions/rcsopenapi_library.xml
+system/etc/permissions/svemanager_library.xml
+system/etc/permissions/vsimservice_library.xml
 system/priv-app/imsservice/imsservice.apk
 system/etc/permissions/privapp-permissions-com.sec.imsservice.xml
 

@@ -1,0 +1,3 @@
+# Allow system_server to resolve Samsung IMS services
+allow system_server sec_ims_service:service_manager find;
+

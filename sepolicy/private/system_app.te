@@ -1,0 +1,3 @@
+# IMS Service (com.sec.imsservice runs in system_app domain)
+add_service(system_app, sec_ims_service)
+

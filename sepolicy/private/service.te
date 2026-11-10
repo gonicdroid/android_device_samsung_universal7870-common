@@ -1,0 +1,3 @@
+# Samsung IMS services
+type sec_ims_service, app_api_service, service_manager_type;
+

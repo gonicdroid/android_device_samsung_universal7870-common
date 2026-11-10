@@ -1,0 +1,4 @@
+# Samsung IMS services
+ImsBase                                     u:object_r:sec_ims_service:s0
+secims                                      u:object_r:sec_ims_service:s0
+
