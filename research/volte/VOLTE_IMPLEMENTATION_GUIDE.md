@@ -381,21 +381,24 @@ PRODUCT_PACKAGES += \
 ```
 
 ### Archivos en `device/samsung/universal7870-common`:
-**En `overlay/frameworks/base/core/res/res/values/config.xml`:**
+**En `overlay/frameworks/base/core/res/res/values/config.xml` (común Q/R + flags Q):**
 ```xml
 <bool name="config_device_volte_available">true</bool>
-<bool name="config_device_vt_available">true</bool>
-<bool name="config_device_wfc_ims_available">true</bool>
-<string name="config_ims_mmtel_package">com.sec.imsservice</string>
-<string name="config_ims_rcs_package">com.sec.imsservice</string>
-```
-
-**En `overlay/packages/services/Telephony/res/values/config.xml`:**
-```xml
 <bool name="config_carrier_volte_available">true</bool>
 <bool name="config_carrier_volte_tty_supported">true</bool>
+<bool name="config_device_vt_available">true</bool>
+<bool name="config_carrier_vt_available">true</bool>
+<bool name="config_device_wfc_ims_available">true</bool>
+<bool name="config_carrier_wfc_ims_available">true</bool>
+<!-- Exclusivo de Android 10 (Q / LineageOS 17.1) -->
+<bool name="config_dynamic_bind_ims">true</bool>
 <string name="config_ims_package">com.sec.imsservice</string>
-<bool name="config_ims_service_override">true</bool>
+```
+
+**En `overlay/packages/services/Telephony/res/values/config.xml` (exclusivo de Android 11 / R / LineageOS 18.1):**
+```xml
+<string name="config_ims_mmtel_package" translatable="false">com.sec.imsservice</string>
+<string name="config_ims_rcs_package" translatable="false">com.sec.imsservice</string>
 ```
 
 **En `common.mk`:**

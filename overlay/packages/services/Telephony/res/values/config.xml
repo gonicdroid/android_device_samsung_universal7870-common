@@ -24,12 +24,4 @@
 <resources>
     <!-- Show enabled lte option for lte device -->
     <bool name="config_enabled_lte" translatable="false">true</bool>
-
-    <!-- Flag indicating if the phone is capable of VoLTE -->
-    <bool name="config_carrier_volte_available">true</bool>
-    <bool name="config_carrier_volte_tty_supported">true</bool>
-
-    <!-- Package name providing an ImsService implementation -->
-    <string name="config_ims_package">com.sec.imsservice</string>
-    <bool name="config_ims_service_override">true</bool>
 </resources>

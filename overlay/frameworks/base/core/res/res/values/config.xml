@@ -255,16 +255,28 @@
     <!-- Flag specifying whether VoLTE is available on the device -->
     <bool name="config_device_volte_available">true</bool>
 
+    <!-- Flag specifying whether VoLTE should be available for carrier -->
+    <bool name="config_carrier_volte_available">true</bool>
+
+    <!-- Flag specifying whether VoLTE TTY is supported -->
+    <bool name="config_carrier_volte_tty_supported">true</bool>
+
     <!-- Flag specifying whether VT is available on the device -->
     <bool name="config_device_vt_available">true</bool>
+
+    <!-- Flag specifying whether VT should be available for carrier -->
+    <bool name="config_carrier_vt_available">true</bool>
 
     <!-- Flag specifying whether WFC is available on the device -->
     <bool name="config_device_wfc_ims_available">true</bool>
 
-    <!-- Package name providing an ImsService implementation for MMTEL -->
-    <string name="config_ims_mmtel_package">com.sec.imsservice</string>
+    <!-- Flag specifying whether WFC should be available for carrier -->
+    <bool name="config_carrier_wfc_ims_available">true</bool>
 
-    <!-- Package name providing an ImsService implementation for RCS -->
-    <string name="config_ims_rcs_package">com.sec.imsservice</string>
+    <!-- Flag specifying whether or not IMS will use the dynamic ImsResolver -->
+    <bool name="config_dynamic_bind_ims">true</bool>
+
+    <!-- Package name providing an ImsService implementation -->
+    <string name="config_ims_package">com.sec.imsservice</string>
 
 </resources>
