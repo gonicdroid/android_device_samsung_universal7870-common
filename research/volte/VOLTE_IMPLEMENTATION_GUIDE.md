@@ -192,6 +192,30 @@ Al desensamblar `imsservice.apk` con `apktool d`:
      Reemplazar `TelephonyFrameworkInitializer.getTelephonyServiceManager().getPhoneSubServiceRegisterer().tryGet()` (inexistente en API 29) por `ServiceManager.getService("iphonesubinfo")`.
    - **`smali/com/sec/internal/ims/core/PdnController.smali` y `smali/com/sec/internal/ims/aec/util/PsDataOffExempt.smali`:**  
      Reemplazar `TelephonyNetworkSpecifier$Builder` (API 30) por `NetworkRequest$Builder.setNetworkSpecifier(Integer.toString(subId))`, que en AOSP funciona en ambos `NetworkRequest` de Android 10 y 11.
+   - **`smali/com/sec/internal/ims/core/iil/IilManager.smali` (`updateTwwan911Timer()`):**  
+     En AOSP, `SystemProperties.set()` lanza `RuntimeException` si el proceso carece de permisos SELinux para escribir una propiedad (error `0x18` / EACCES). Envolver la llamada a `SystemProperties.set("ril.twwan911Timer", ...)` dentro de un bloque `try/catch (Throwable)` evita que una denegación de propiedad mate al proceso `imsservice`.
+
+---
+
+### 3.4 Configuración de APN IMS en AOSP (`apns-conf.xml`)
+
+Para que el framework de telefonía de Android (`TelephonyNetworkFactory` y `DcTracker`) pueda establecer la portadora de datos dedicada para IMS (`PDN REQUEST : 11`, típicamente sobre `rmnet1`), la base de datos de APNs de la ROM **debe contener obligatoriamente una entrada con `type="ims"`** para el operador SIM activo (ej. Claro Argentina `MCC 722 MNC 310`).
+
+Si la base de datos carece de este APN, `PdnController` reporta:
+```text
+PdnController: onPreciseDataConnectionStateChanged: state=-1, APN types: ims, APN: null, Fail cause: NONE
+```
+Configuración requerida para `apns-conf.xml`:
+```xml
+<apn carrier="Claro IMS"
+     mcc="722"
+     mnc="310"
+     apn="ims"
+     type="ims"
+     protocol="IPV4V6"
+     roaming_protocol="IPV4V6" />
+```
+Una vez presente el APN, `ConnectivityService` crea y activa la interfaz `rmnet1` con capacidades `IMS` y asigna las direcciones P-CSCF descubiertas por la red móvil.
 
 #### Modificaciones en Recursos JSON (`res/raw/`)
 1. **`res/raw/imsswitch.json` (también `imsswitch_open.json` e `imsswitch_tablet.json`):**
@@ -414,7 +438,7 @@ PRODUCT_PROPERTY_OVERRIDES += \
 - `BoardConfigCommon.mk`: añadir `BOARD_PLAT_PRIVATE_SEPOLICY_DIR += $(COMMON_PATH)/sepolicy/private`
 - `sepolicy/private/service.te`: `type sec_ims_service, app_api_service, service_manager_type;`
 - `sepolicy/private/service_contexts`: mapear `ImsBase` y `secims` a `u:object_r:sec_ims_service:s0`
-- `sepolicy/private/system_app.te`: `add_service(system_app, sec_ims_service)`
+- `sepolicy/private/system_app.te`: `add_service(system_app, sec_ims_service)` y `set_prop(system_app, radio_prop)` (para propiedades `ril.*` como `ril.twwan911Timer`)
 - `sepolicy/private/radio.te`: `allow radio sec_ims_service:service_manager find;`
 - `sepolicy/private/system_server.te`: `allow system_server sec_ims_service:service_manager find;`
 
