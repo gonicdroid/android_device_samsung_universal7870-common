@@ -321,7 +321,8 @@ Una vez presente el APN, `ConnectivityService` crea y activa la interfaz `rmnet1
 
     init_daemon_domain(imsd)
 
-    allow imsd self:capability { setuid net_admin net_raw dac_override };
+    allow imsd self:capability { setuid net_admin net_raw };
+    dontaudit imsd self:capability dac_override;
     allow imsd self:key_socket create_socket_perms_no_ioctl;
     allow imsd kernel:system module_request;
 
