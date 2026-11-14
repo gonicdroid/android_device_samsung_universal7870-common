@@ -1,0 +1,13 @@
+type imsd, domain, coredomain;
+type imsd_exec, exec_type, file_type, system_file_type;
+type imsd_socket, file_type, coredomain_socket;
+
+init_daemon_domain(imsd)
+
+allow imsd self:capability { setuid net_admin net_raw dac_override };
+allow imsd self:key_socket create_socket_perms_no_ioctl;
+allow imsd kernel:system module_request;
+
+# Communication between imsservice (system_app) and imsd
+allow system_app imsd_socket:sock_file write;
+allow system_app imsd:unix_stream_socket connectto;

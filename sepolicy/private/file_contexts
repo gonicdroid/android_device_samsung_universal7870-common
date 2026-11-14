@@ -1,0 +1,2 @@
+/system/bin/imsd        u:object_r:imsd_exec:s0
+/dev/socket/imsd        u:object_r:imsd_socket:s0

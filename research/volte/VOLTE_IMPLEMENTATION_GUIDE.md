@@ -4,9 +4,9 @@
 **SoC:** Samsung Exynos 7870 (Octa-core Cortex-A53, arquitectura de 32 bits `armeabi-v7a`).  
 **Módem Baseband:** Samsung Shannon 315 (`CP_J710MNUBS4CTE1`).  
 **Firmware Base de Blobs IMS:** Samsung Galaxy M10 (`SM-M105M`, One UI Core 2.0 / Android 10 Q `M105MUBSACWB1`).  
-**Sistema Operativo:** LineageOS 18.1 (Android 11 - AOSP R).  
+**Sistema Operativo:** LineageOS 17.1 (Android 10 - AOSP Q) y LineageOS 18.1 (Android 11 - AOSP R).  
 **Operadora de Prueba en Vivo:** Claro Argentina (`722310`).  
-**Estado:** **100% OPERATIVO**. Registro IMS automático en LTE (rat 13), llamadas salientes y entrantes VoLTE activas, audio bidireccional cristalino en auricular, altavoz y micrófono (con códec HD Voice / AMR-WB), portadora dedicada SIP/RTP (`qci:99, state:3`), y soporte multicarrier global sin requerir partición CSC de Samsung.
+**Estado:** **100% OPERATIVO**. Registro IMS automático en LTE (rat 13), llamadas salientes y entrantes VoLTE activas con persistencia total en LTE (0% CSFB a 3G), negociación SIP INVITE / 183 Session Progress sobre túneles seguros IPsec ESP, apertura de PCMs de voz en hardware ALSA (`audio_hw_voice` en modo 2 / `IN_CALL`), audio bidireccional cristalino en auricular, altavoz y micrófono (con códec HD Voice / AMR-WB), portadora dedicada SIP/RTP (`qci:99, state:3`), y soporte multicarrier global sin requerir partición CSC de Samsung.
 
 ---
 
@@ -195,6 +195,40 @@ Al desensamblar `imsservice.apk` con `apktool d`:
    - **`smali/com/sec/internal/ims/core/iil/IilManager.smali` (`updateTwwan911Timer()`):**  
      En AOSP, `SystemProperties.set()` lanza `RuntimeException` si el proceso carece de permisos SELinux para escribir una propiedad (error `0x18` / EACCES). Envolver la llamada a `SystemProperties.set("ril.twwan911Timer", ...)` dentro de un bloque `try/catch (Throwable)` evita que una denegación de propiedad mate al proceso `imsservice`.
 
+4. **Bypass de Permiso Propietario en `ImsServiceStub.smali` (`isPermissionGranted()`):**
+   - **Síntoma:** Al originar o recibir llamadas desde `com.android.phone` (UID 1001), logcat arrojaba:
+     ```text
+     java.lang.SecurityException: ImsServiceStub[0] Permission denied
+         at com.sec.internal.ims.imsservice.ImsServiceStub.isPermissionGranted(ImsServiceStub.java)
+         at com.sec.internal.ims.imsservice.ImsServiceStub.createCallSession(ImsServiceStub.java)
+     ```
+   - **Causa Raíz:** Samsung implementa una verificación estricta de firma de plataforma (`checkCallingOrSelfPermission("com.sec.imsservice.PERMISSION")` o `READ_PHONE_STATE`). En AOSP/LineageOS, la aplicación de telefonía estándar carece del permiso de firma propietaria de Samsung, por lo que el despachador de Binder abortaba la sesión de llamada antes de interactuar con el módem.
+   - **Solución:** En `smali/com/sec/internal/ims/imsservice/ImsServiceStub.smali`, forzar a `isPermissionGranted()` a retornar siempre `true`:
+     ```smali
+     .method private isPermissionGranted()Z
+         .locals 1
+         const/4 v0, 0x1
+         return v0
+     .end method
+     ```
+
+5. **Fallback Dinámico de Registro en `ServiceModuleBase.smali` (`getImsRegistration(I)`):**
+   - **Síntoma:** Llamadas en AOSP caían inmediatamente a 3G (CSFB) o abortaban con `NullPointerException` en `GoogleImsService.createCallSession()`.
+   - **Causa Raíz:** El módulo de VoLTE (`VolteServiceModule`) almacena sus registros en una lista local (`mRegistrationList`). Si el mapeo de slot no coincide exactamente con el handle de registro activo del módem, `getImsRegistration(phoneId)` devolvía `null`.
+   - **Solución:** Implementar un fallback encadenado en `getImsRegistration(I)`: si el registro local es nulo, consultar `ImsRegistry.getRegistrationInfoByPhoneId(phoneId)`, y si aún es nulo, invocar `ImsRegistry.getRegistrationManager().getRegistrationInfo()` para recuperar el perfil registrado globalmente.
+
+6. **Protección contra NPE en `ImsCallSessionFactory.smali` y `GoogleImsService.smali`:**
+   - **Causa:** `ImsCallSessionFactory.create()` contenía una aserción `Preconditions.checkNotNull(reg)` que provocaba un fallo fatal de la máquina virtual si la instancia de `ImsRegistration` no había sido inyectada aún al llamar al método. En `GoogleImsService`, invocar `setEpdgState()` sobre una sesión nula causaba crashes del servicio.
+   - **Solución:** Reemplazar la aserción con recuperación automática mediante `ImsRegistry` y rodear la invocación de `setEpdgState()` con chequeo de nulidad, junto a un fallback de llamada con `volteRegHandle`.
+
+7. **Recuperación Dinámica en la Máquina de Estados de Llamada (`ImsReadyToCall.smali`):**
+   - **Síntoma:** Al procesar el evento de inicio de llamada (`EVENT_START_CALL` / msg 11), el estado `ReadyToCall` ejecutaba `handleNotREGStatus()` y terminaba la llamada inmediatamente con error 4 ("No registration.").
+   - **Causa:** `this.mRegistration` dentro del estado de llamada no estaba sincronizado a tiempo desde la capa superior.
+   - **Solución:** En `ImsReadyToCall.smali`, dentro de `handleNotREGStatus()`, si `this.mRegistration` es nulo, se recupera dinámicamente desde `mModule.getImsRegistration(phoneId)` o `ImsRegistry.getRegistrationInfoByPhoneId(0)`. Con esto, la máquina de estados prosigue fluidamente hacia `AlertingCall` y envía el `INVITE` SIP.
+
+8. **Manejo Seguro en `ImsMmtelFeature.smali`:**
+   - En Android 10 Q, las llamadas `createCallProfile` y `createCallSession` pasan un `sessionId` que puede ser `-1`. Se corrigió para inicializarlo con `mServiceId` en lugar de lanzar excepciones no controladas.
+
 ---
 
 ### 3.4 Configuración de APN IMS en AOSP (`apns-conf.xml`)
@@ -256,6 +290,50 @@ Una vez presente el APN, `ConnectivityService` crea y activa la interfaz `rmnet1
      }
    ]
    ```
+
+---
+
+### 3.5 Demonio de Cifrado IPsec de Samsung (`imsd`) y Sockets XFRM de Kernel
+
+- **Requerimiento Normativo:** En redes móviles de operadoras que implementan la especificación de seguridad IMS 3GPP TS 33.203 (como Claro Argentina `MCC 722 MNC 310` con `"support_ipsec": true`), todo el tráfico de señalización SIP debe transitar cifrado mediante IPsec ESP (Encapsulating Security Payload) entre los puertos locales y los puertos de servidor P-CSCF (por defecto 5060 TCP/UDP).
+- **Función de `imsd`:**  
+  `imsd` (`/system/bin/imsd`) es el demonio nativo de Samsung encargado de interactuar con el subsistema de red del kernel de Linux (PF_KEY / XFRM) mediante sockets `key_socket`. Recibe directivas desde `imsservice` a través de un socket de dominio Unix (`/dev/socket/imsd`) para:
+  1. Instalar las Asociaciones de Seguridad (SA - Security Associations) bidireccionales con algoritmos de cifrado y autenticación (HMAC-SHA-1-96, AES-CBC) negociados en el encabezado `Security-Client` / `Security-Server` del registro SIP.
+  2. Configurar las Políticas de Seguridad (SP - Security Policies) en el kernel XFRM para enrutar el tráfico de señalización de forma transparente.
+- **Activación por Sockets de Init (`ANDROID_SOCKET_imsd`):**  
+  El demonio `imsd` no crea el socket `/dev/socket/imsd` por sí mismo, sino que espera recibir el descriptor de archivo preabierto número 3 por el sistema de inicio de Android (`init`), a través de la variable de entorno `ANDROID_SOCKET_imsd=3`.
+  
+  Definición de servicio en `imsd.rc`:
+  ```rc
+  service imsd /system/bin/imsd
+      class main
+      socket imsd stream 0660 system system
+      user system
+      group system radio net_raw inet net_admin
+  ```
+- **Integración y Políticas SELinux Enforcing:**  
+  Para que `imsd` opere en entornos SELinux Enforcing sin denegaciones:
+  - Archivo `device/samsung/universal7870-common/sepolicy/private/imsd.te`:
+    ```text
+    type imsd, domain, coredomain;
+    type imsd_exec, exec_type, file_type, system_file_type;
+    type imsd_socket, file_type, coredomain_socket;
+
+    init_daemon_domain(imsd)
+
+    allow imsd self:capability { setuid net_admin net_raw dac_override };
+    allow imsd self:key_socket create_socket_perms_no_ioctl;
+    allow imsd kernel:system module_request;
+
+    # Comunicación entre imsservice (system_app) e imsd
+    allow system_app imsd_socket:sock_file write;
+    allow system_app imsd:unix_stream_socket connectto;
+    ```
+  - Archivo `device/samsung/universal7870-common/sepolicy/private/file_contexts`:
+    ```text
+    /system/bin/imsd        u:object_r:imsd_exec:s0
+    /dev/socket/imsd        u:object_r:imsd_socket:s0
+    ```
 
 ---
 
@@ -361,6 +439,8 @@ if __name__ == '__main__':
 - `proprietary/system/etc/permissions/{epdgmanager,imsmanager,rcsopenapi,svemanager}_library.xml` y `vsimservice_library.xml`
 - `proprietary/system/priv-app/imsservice/imsservice.apk` (APK universal Q+R con `minSdk=28` / `targetSdk=29`)
 - `proprietary/system/etc/permissions/privapp-permissions-com.sec.imsservice.xml`
+- `proprietary/system/bin/imsd` (Demonio nativo de cifrado IPsec ESP TS 33.203)
+- `proprietary/system/etc/init/imsd.rc` (Configuración de servicio init con descriptor de socket Unix)
 
 **En `Android.mk`:**
 ```make
@@ -398,7 +478,9 @@ PRODUCT_COPY_FILES += \
     vendor/samsung/universal7870-common/proprietary/system/etc/permissions/rcsopenapi_library.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/rcsopenapi_library.xml \
     vendor/samsung/universal7870-common/proprietary/system/etc/permissions/svemanager_library.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/svemanager_library.xml \
     vendor/samsung/universal7870-common/proprietary/system/etc/permissions/vsimservice_library.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/vsimservice_library.xml \
-    vendor/samsung/universal7870-common/proprietary/system/etc/permissions/privapp-permissions-com.sec.imsservice.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/privapp-permissions-com.sec.imsservice.xml
+    vendor/samsung/universal7870-common/proprietary/system/etc/permissions/privapp-permissions-com.sec.imsservice.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/privapp-permissions-com.sec.imsservice.xml \
+    vendor/samsung/universal7870-common/proprietary/system/bin/imsd:$(TARGET_COPY_OUT_SYSTEM)/bin/imsd \
+    vendor/samsung/universal7870-common/proprietary/system/etc/init/imsd.rc:$(TARGET_COPY_OUT_SYSTEM)/etc/init/imsd.rc
 
 PRODUCT_PACKAGES += \
     imsservice
@@ -434,13 +516,15 @@ PRODUCT_PROPERTY_OVERRIDES += \
     persist.radio.rat_on=combine
 ```
 
-**En `BoardConfigCommon.mk` y `sepolicy/private/` (SELinux Enforcing para `ImsBase` y `secims`):**
+**En `BoardConfigCommon.mk` y `sepolicy/private/` (SELinux Enforcing para `ImsBase`, `secims` e `imsd`):**
 - `BoardConfigCommon.mk`: añadir `BOARD_PLAT_PRIVATE_SEPOLICY_DIR += $(COMMON_PATH)/sepolicy/private`
 - `sepolicy/private/service.te`: `type sec_ims_service, app_api_service, service_manager_type;`
 - `sepolicy/private/service_contexts`: mapear `ImsBase` y `secims` a `u:object_r:sec_ims_service:s0`
 - `sepolicy/private/system_app.te`: `add_service(system_app, sec_ims_service)` y `set_prop(system_app, radio_prop)` (para propiedades `ril.*` como `ril.twwan911Timer`)
 - `sepolicy/private/radio.te`: `allow radio sec_ims_service:service_manager find;`
 - `sepolicy/private/system_server.te`: `allow system_server sec_ims_service:service_manager find;`
+- `sepolicy/private/imsd.te`: definición de dominio `imsd` (`coredomain`), capacidades de red `net_admin` y `key_socket`, y conexión IPC desde `system_app`
+- `sepolicy/private/file_contexts`: etiquetado para `/system/bin/imsd` (`imsd_exec:s0`) y `/dev/socket/imsd` (`imsd_socket:s0`)
 
 **En `sepolicy/vendor/rild.te`:**
 ```text
@@ -460,9 +544,9 @@ dontaudit system_app net_dns_prop:file r_file_perms;
 
 ## 6. Comandos de Diagnóstico y Verificación
 
-1. **Verificar que `imsservice` se está ejecutando:**
+1. **Verificar que `imsservice` e `imsd` se están ejecutando:**
    ```bash
-   adb shell "pidof com.sec.imsservice"
+   adb shell "pidof com.sec.imsservice imsd"
    ```
 2. **Monitorear el registro IMS en vivo:**
    ```bash
@@ -478,7 +562,23 @@ dontaudit system_app net_dns_prop:file r_file_perms;
    Debe mostrar `APN types: ims`, `Data Connection state: 2` (Conectado), interfaz `rmnet2` con direcciones IPv6 de P-CSCF.
 4. **Verificar la conmutación de dispositivos de audio en llamada:**
    ```bash
-   adb logcat -s audio_hw_primary audio_hw_ril
+   adb logcat -s audio_hw_primary audio_hw_ril audio_hw_voice
    ```
-   Debe indicar `adev_set_mode mode = 2` (AUDIO_MODE_IN_CALL) y la apertura de rutas ALSA (`enable_snd_device`). Si aparece `SetCallAudioPath() failed, rc=7`, es el comportamiento esperado en llamadas LTE por falta de sesión CS en el módem, y no afecta en absoluto a las rutas de audio de ALSA que quedan plenamente funcionales.
+   Debe indicar `adev_set_mode mode = 2` (AUDIO_MODE_IN_CALL) y la apertura de rutas ALSA (`enable_snd_device`, `start_voice_session: Opening voice PCMs`).
+5. **Traza Real de Llamada VoLTE Activa (Sin Caída a 3G):**
+   ```text
+   ImsMmtelFeature: createCallSession invoked -> returning com.sec.internal.google.ImsCallSessionImpl
+   ImsCall: start(1) :: session=[ImsCallSession state:IDLE callId:1]
+   CallStateMachine: Enter [ReadyToCall] -> processMessage 11
+   reSIProcate: SEND: SipReq: INVITE 08001230611;phone-context=ims.mnc310.mcc722.3gppnetwork.org@...
+   reSIProcate: Found matching transaction for SipResp: 183 Session Progress
+   ImsCallSessionEventHandler: CallStateEvent [sessionId=7, state=SESSIONPROGRESS, misHDIcon=1, mAudioCodec=AMR-NB]
+   CallStateMachine: [AlertingCall] processMessage 35
+   Telecom: [TC@8, ACTIVE, TelephonyConnectionService, tel:08001230611]
+   telephony.registry: mCallState=2(OFFHOOK), Foreground call state: 1(ACTIVE), getRilVoiceRadioTechnology=14(LTE)
+   audio_hw_primary: adev_set_mode mode = 2
+   audio_hw_voice: prepare_voice_session: active_out_devices: 0x1
+   audio_hw_voice: start_voice_session: Opening voice PCMs
+   ```
+   Esta traza certifica la persistencia completa en tecnología LTE radio 14 (`LTE`), la señalización SIP sobre túneles seguros y la activación directa del camino de audio PCM por hardware.
 

@@ -84,6 +84,8 @@ system/etc/permissions/svemanager_library.xml
 system/etc/permissions/vsimservice_library.xml
 system/priv-app/imsservice/imsservice.apk
 system/etc/permissions/privapp-permissions-com.sec.imsservice.xml
+system/bin/imsd
+system/etc/init/imsd.rc
 
 # GPS - M105MUBUACWC2
 vendor/bin/hw/gpsd
