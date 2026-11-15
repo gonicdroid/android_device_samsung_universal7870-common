@@ -27,9 +27,10 @@ $(call inherit-product, frameworks/native/build/phone-xhdpi-2048-dalvik-heap.mk)
 # Soong namespaces
 PRODUCT_SOONG_NAMESPACES += \
     $(COMMON_PATH) \
-    hardware/google/pixel \
     hardware/samsung \
-    hardware/samsung/hidl/power-libperfmgr
+    hardware/samsung/aidl/power-libperfmgr \
+    hardware/google/pixel \
+    hardware/google/interfaces
 
 # -----------------------------------------------------------
 # 2. VINTF (Project Treble Manifests)
@@ -44,8 +45,8 @@ DEVICE_MATRIX_FILE += $(COMMON_PATH)/compatibility_matrix.xml
 # Audio
 PRODUCT_PACKAGES += \
     android.hardware.audio@6.0-impl \
-    android.hardware.audio.service \
     android.hardware.audio.effect@6.0-impl \
+    android.hardware.audio.service \
     audio.primary.universal7870 \
     audio.r_submix.default \
     audio.a2dp.default \
@@ -88,6 +89,8 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     android.hardware.drm@1.0-impl \
     android.hardware.drm@1.0-service \
+    android.hardware.drm@1.1.vendor \
+    android.hardware.drm@1.2.vendor \
     android.hardware.drm@1.3-service.clearkey
 
 # Gatekeeper 
@@ -125,7 +128,7 @@ PRODUCT_PACKAGES += \
 
 # Lights
 PRODUCT_PACKAGES += \
-    android.hardware.light@2.0-service.samsung
+    android.hardware.light-service.samsung
 
 # Media / OMX 
 PRODUCT_PACKAGES += \
@@ -152,10 +155,10 @@ PRODUCT_PACKAGES += \
 
 # Power
 PRODUCT_PACKAGES += \
-    android.hardware.power@1.3-service.samsung-libperfmgr
+    android.hardware.power-service.samsung-libperfmgr
 
 PRODUCT_COPY_FILES += \
-    $(LOCAL_PATH)/configs/powerhint.json:$(TARGET_COPY_OUT_VENDOR)/etc/powerhint.json
+    $(COMMON_PATH)/configs/powerhint.json:$(TARGET_COPY_OUT_VENDOR)/etc/powerhint.json
 
 PRODUCT_PROPERTY_OVERRIDES += \
     vendor.powerhal.perf_profiles=3
@@ -166,15 +169,19 @@ PRODUCT_PACKAGES += \
 
 # RIL
 PRODUCT_PACKAGES += \
-    android.hardware.radio@1.0 \
-    android.hardware.radio@1.1 \
-    android.hardware.radio@1.2 \
-    android.hardware.radio@1.3 \
-    android.hardware.radio@1.4 \
-    android.hardware.radio.deprecated@1.0 \
-    android.hardware.radio.config@1.0 \
-    android.hardware.radio.config@1.1 \
-    android.hardware.radio.config@1.2 \
+    android.hardware.radio@1.0.vendor \
+    android.hardware.radio@1.1.vendor \
+    android.hardware.radio@1.2.vendor \
+    android.hardware.radio@1.3.vendor \
+    android.hardware.radio@1.4.vendor \
+    android.hardware.radio.deprecated@1.0.vendor \
+    android.hardware.radio.config@1.0.vendor \
+    android.hardware.radio.config@1.1.vendor \
+    android.hardware.radio.config@1.2.vendor \
+    android.hardware.gnss@1.0.vendor \
+    android.hardware.gnss@1.1.vendor \
+    android.hardware.gnss@2.0.vendor \
+    android.hardware.gnss@2.1.vendor \
     librilutils \
     libxml2 \
     secril_config_svc
@@ -206,7 +213,7 @@ PRODUCT_PACKAGES += \
 
 # Vibrator
 PRODUCT_PACKAGES += \
-    android.hardware.vibrator@1.3-service.samsung
+    android.hardware.vibrator-service.samsung
 
 # WiFi
 PRODUCT_PACKAGES += \
