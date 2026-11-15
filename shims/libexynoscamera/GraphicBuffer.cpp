@@ -44,3 +44,26 @@ extern "C" void _ZN7android13GraphicBufferC1EjjijjP13native_handleb(
         inFormat, static_cast<uint32_t>(1), static_cast<uint64_t>(inUsage), inStride);
 }
 
+extern "C" void _ZN7android7SurfaceC1ERKNS_2spINS_22IGraphicBufferProducerEEEbRKNS1_INS_7IBinderEEE(
+        void* thiz,
+        const void* bufferProducer,
+        bool controlledByApp,
+        const void* surfaceControlHandle);
+
+extern "C" void _ZN7android7SurfaceC1ERKNS_2spINS_22IGraphicBufferProducerEEEb(
+        void* thiz,
+        const void* bufferProducer,
+        bool controlledByApp) {
+    const void* nullHandle = nullptr;
+    _ZN7android7SurfaceC1ERKNS_2spINS_22IGraphicBufferProducerEEEbRKNS1_INS_7IBinderEEE(
+        thiz, bufferProducer, controlledByApp, &nullHandle);
+}
+
+extern "C" void _ZN7android7SurfaceC2ERKNS_2spINS_22IGraphicBufferProducerEEEb(
+        void* thiz,
+        const void* bufferProducer,
+        bool controlledByApp) {
+    _ZN7android7SurfaceC1ERKNS_2spINS_22IGraphicBufferProducerEEEb(thiz, bufferProducer, controlledByApp);
+}
+
+

@@ -16,7 +16,7 @@
 LOCAL_PATH := $(call my-dir)
 
 include $(CLEAR_VARS)
-LOCAL_SRC_FILES := GraphicBuffer.cpp Fence.cpp StreamAllocatorHook.cpp FrontFlashHook.cpp
+LOCAL_SRC_FILES := GraphicBuffer.cpp Fence.cpp StreamAllocatorHook.cpp FrontFlashHook.cpp String16.cpp
 
 LOCAL_C_INCLUDES := \
     frameworks/native/include \
@@ -26,6 +26,7 @@ LOCAL_HEADER_LIBRARIES := libhardware_headers
 
 LOCAL_SHARED_LIBRARIES := \
     libui \
+    libgui_vendor \
     liblog \
     libcutils \
     libdl \
