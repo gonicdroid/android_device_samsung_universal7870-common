@@ -83,6 +83,7 @@ TARGET_INIT_VENDOR_LIB := libinit_universal7870
 TARGET_KERNEL_ARCH := arm64
 TARGET_KERNEL_HEADER_ARCH := arm64
 TARGET_KERNEL_SOURCE := kernel/samsung/exynos7870
+TARGET_KERNEL_CLANG_COMPILE := false
 TARGET_KERNEL_LLVM_BINUTILS := false
 # Kernel Toolchain Selection: GCC 12.3 (Preferred) -> Linaro 7.5 -> Stock AOSP GCC 4.9
 ifneq ($(wildcard $(shell pwd)/prebuilts/gcc/linux-x86/aarch64/arm-gnu-12.3/bin/aarch64-none-linux-gnu-gcc),)
@@ -164,12 +165,22 @@ BOARD_VNDK_VERSION := current
 # Vendor security patch level - M105MUBUACWC2
 VENDOR_SECURITY_PATCH := 2023-03-01
 
+# HWC
+TARGET_USES_VULKAN := false
+
 # Verity
 # Only needed for signing
 BOARD_AVB_ENABLE := false
 
 ALLOW_MISSING_DEPENDENCIES := true
 BUILD_BROKEN_DUP_RULES := true
+
+# Build broken rules for legacy vendor blobs
+BUILD_BROKEN_DUP_RULES := true
+BUILD_BROKEN_ELF_PREBUILT_PRODUCT_COPY_FILES := true
+BUILD_BROKEN_ENFORCE_SYSPROP_OWNER := true
+BUILD_BROKEN_TREBLE_SYSPROP_NEVERALLOW := true
+BUILD_BROKEN_VENDOR_PROPERTY_NAMESPACE := true
 
 # AUDIO
 USE_XML_AUDIO_POLICY_CONF := 1

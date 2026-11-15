@@ -13,7 +13,6 @@ allow wifiloader sysfs_wifi:file rw_file_perms;
 allow wifiloader sysfs_net:dir search;
 allow wifiloader conn_vendor_data_file:dir create_dir_perms;
 allow wifiloader conn_vendor_data_file:file create_file_perms;
-set_prop(wifiloader, wifi_prop);
 
 # /efs
 allow wifiloader efs_file:dir search;

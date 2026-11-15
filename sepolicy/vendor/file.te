@@ -52,7 +52,7 @@ type sysfs_usb_supply, sysfs_type, fs_type, mlstrustedobject;
 type sysfs_mmc, sysfs_type, fs_type, mlstrustedobject;
 type sysfs_graphics, sysfs_type, fs_type, mlstrustedobject;
 typeattribute sysfs_ion mlstrustedobject;
-type sysfs_block, sysfs_type, fs_type, mlstrustedobject;
+typeattribute sysfs_block mlstrustedobject;
 type sysfs_jack, sysfs_type, fs_type, mlstrustedobject;
 type sysfs_v4l, sysfs_type, fs_type, mlstrustedobject;
 type sysfs_sswap, sysfs_type, fs_type, mlstrustedobject;

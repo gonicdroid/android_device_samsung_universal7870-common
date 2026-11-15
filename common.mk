@@ -176,7 +176,8 @@ PRODUCT_PACKAGES += \
     android.hardware.radio.config@1.1 \
     android.hardware.radio.config@1.2 \
     librilutils \
-    libxml2
+    libxml2 \
+    secril_config_svc
 
 # Sensors
 PRODUCT_PACKAGES += \
@@ -379,7 +380,6 @@ PRODUCT_PROPERTY_OVERRIDES += \
 # Graphics
 PRODUCT_PROPERTY_OVERRIDES += \
     ro.opengles.version=196610 \
-    ro.hwui.use_vulkan=false \
     debug.hwc.otf=1 \
     debug.hwc.winupdate=1 \
     debug.hwc.nodirtyregion=1 \

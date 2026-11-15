@@ -1,11 +1,14 @@
 # CP-Boot Daemon
-type cpboot-daemon_prop, property_type;
+type cpboot-daemon_prop, property_type, vendor_property_type;
 
 # modemloader
-type modemloader_prop, property_type;
+type modemloader_prop, property_type, vendor_property_type;
 
 # mobicore (tee)
-type tee_prop, property_type;
+type tee_prop, property_type, vendor_property_type;
 
 # sswap
-type sswap_prop, property_type;
+type sswap_prop, property_type, vendor_property_type;
+
+# secril_config
+type secril_config_prop, property_type, vendor_property_type;

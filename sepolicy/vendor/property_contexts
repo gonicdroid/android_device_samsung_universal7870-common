@@ -16,11 +16,11 @@ sys.mobicoredaemon.enable         u:object_r:tee_prop:s0
 vendor.sys.mobicoredaemon.enable  u:object_r:tee_prop:s0
 
 # radio
-ro.vendor.multisim.         u:object_r:radio_prop:s0
-persist.ril.modem.board    u:object_r:radio_prop:s0
-persist.ril.ims.eutranParam u:object_r:radio_prop:s0
-persist.ril.ims.utranParam  u:object_r:radio_prop:s0
-persist.ril.interfaceconf.failed u:object_r:radio_prop:s0
+ro.vendor.multisim.         u:object_r:secril_config_prop:s0
+persist.ril.modem.board    u:object_r:secril_config_prop:s0
+persist.ril.ims.eutranParam u:object_r:secril_config_prop:s0
+persist.ril.ims.utranParam  u:object_r:secril_config_prop:s0
+persist.ril.interfaceconf.failed u:object_r:secril_config_prop:s0
 
 # sswap
 persist.sys.swapoff     u:object_r:sswap_prop:s0

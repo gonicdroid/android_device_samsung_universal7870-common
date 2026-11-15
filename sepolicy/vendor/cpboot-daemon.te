@@ -60,5 +60,3 @@ allow cpboot-daemon proc_dt_firmware:file { open read };
 
 # set properties on boot
 set_prop(cpboot-daemon, cpboot-daemon_prop)
-set_prop(cpboot-daemon, radio_prop)
-set_prop(cpboot-daemon, system_prop)
