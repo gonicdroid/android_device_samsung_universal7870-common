@@ -42,6 +42,8 @@ WIFI_DRIVER_FW_PATH_AP           := "/vendor/etc/wifi/bcmdhd_apsta.bin"
 WIFI_BAND                        := 802_11_ABG
 WPA_SUPPLICANT_USE_HIDL          := true
 BOARD_HAVE_SAMSUNG_WIFI          := true
+WIFI_AVOID_IFACE_RESET_MAC_CHANGE := true
+WIFI_HIDL_FEATURE_DISABLE_AP_MAC_RANDOMIZATION := true
 
 # Bluetooth
 BOARD_HAVE_BLUETOOTH := true
