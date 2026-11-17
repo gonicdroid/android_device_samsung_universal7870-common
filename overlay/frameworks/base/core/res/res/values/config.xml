@@ -123,7 +123,7 @@
     <bool name="config_powerDecoupleInteractiveModeFromDisplay">true</bool>
 
     <!-- Allow screen mirroring/miracast -->
-    <bool name="config_enableWifiDisplay">true</bool>
+    <bool name="config_enableWifiDisplay">false</bool>
 
     <!-- The device supports freeform window management -->
     <bool name="config_freeformWindowManagement">true</bool>
