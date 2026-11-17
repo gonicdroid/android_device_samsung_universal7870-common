@@ -38,6 +38,7 @@ on post-fs-data
 
 on boot
     setprop wifi.interface wlan0
+    setprop wifi.direct.interface p2p-dev-wlan0
 
 service wpa_supplicant /vendor/bin/hw/wpa_supplicant \
     -O/data/vendor/wifi/wpa/sockets -puse_p2p_group_interface=1 \
