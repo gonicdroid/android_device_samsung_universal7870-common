@@ -106,10 +106,10 @@ PRODUCT_PACKAGES += \
 PRODUCT_PACKAGES += \
     android.hardware.health@2.0-service
 
-# Keymaster
-PRODUCT_PACKAGES += \
-    android.hardware.keymaster@3.0-impl \
-    android.hardware.keymaster@3.0-service 
+# Keymaster (provided by vendor prebuilt blobs from m10lte)
+# PRODUCT_PACKAGES += \
+#     android.hardware.keymaster@3.0-impl \
+#     android.hardware.keymaster@3.0-service 
 
 # Lights
 PRODUCT_PACKAGES += \

@@ -116,8 +116,19 @@ vendor/app/mcRegistry/ffffffffd00000000000000000000014.tlbin
 vendor/app/mcRegistry/ffffffffd00000000000000000000016.tlbin
 vendor/app/mcRegistry/ffffffffd00000000000000000000062.tlbin
 
-# Keystore 0.3 - A260GDDSCAUJ1
-vendor/lib/hw/keystore.exynos7870.so:vendor/lib/hw/keystore.universal7870.so
+# Keymaster 3.0 - M105MUBUACWC2
+vendor/bin/hw/android.hardware.keymaster@3.0-service
+vendor/etc/init/android.hardware.keymaster@3.0-service.rc
+vendor/lib/hw/android.hardware.keymaster@3.0-impl.so
+vendor/lib/hw/keystore.mdfpp.so
+vendor/lib/libkeymaster2_mdfpp.so
+vendor/lib/libkeymaster3device.so
+vendor/lib/libkeymaster_helper_vendor.so
+vendor/lib/libkeymaster_messages.so
+vendor/lib/libkeymaster_portable.so
+vendor/lib/libpuresoftkeymasterdevice.so
+vendor/lib/libskeymaster3device.so
+vendor/lib/libsoftkeymasterdevice.so
 
 # DRM - M105MUBUACWC2
 vendor/bin/hw/android.hardware.drm@1.2-service.widevine
