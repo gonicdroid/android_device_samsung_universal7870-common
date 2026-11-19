@@ -41,9 +41,9 @@ DEVICE_MATRIX_FILE += $(COMMON_PATH)/compatibility_matrix.xml
 
 # Audio
 PRODUCT_PACKAGES += \
-    android.hardware.audio@2.0-impl \
+    android.hardware.audio@5.0-impl \
     android.hardware.audio@2.0-service \
-    android.hardware.audio.effect@2.0-impl \
+    android.hardware.audio.effect@5.0-impl \
     audio.primary.universal7870 \
     audio.r_submix.default \
     audio.a2dp.default \
@@ -165,9 +165,13 @@ PRODUCT_PACKAGES += \
 
 # Sensors
 PRODUCT_PACKAGES += \
-    android.hardware.sensors@1.0-impl \
+    android.hardware.sensors@1.0-impl.samsung \
     android.hardware.sensors@1.0-service \
     libsensorndkbridge
+
+# Doze
+PRODUCT_PACKAGES += \
+    SamsungDoze
 
 # USB HAL
 PRODUCT_PACKAGES += \
