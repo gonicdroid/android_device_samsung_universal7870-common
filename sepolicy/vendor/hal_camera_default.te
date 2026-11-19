@@ -9,3 +9,8 @@ allow hal_camera_default self:process execmem;
 allow hal_camera_default hal_graphics_mapper_hwservice:hwservice_manager find;
 
 vndbinder_use(hal_camera_default)
+
+# Secril & property lookups
+get_prop(hal_camera_default, secril_config_prop)
+dontaudit hal_camera_default { default_prop radio_prop system_prop }:file r_file_perms;
+

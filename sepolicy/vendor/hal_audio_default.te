@@ -19,3 +19,6 @@ dontaudit hal_audio_default system_file:file r_file_perms;
 
 # Vendor binder
 vndbinder_use(hal_audio_default)
+
+dontaudit hal_audio_default default_prop:file r_file_perms;
+

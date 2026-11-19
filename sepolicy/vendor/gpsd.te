@@ -11,7 +11,12 @@ allow gpsd rild:unix_stream_socket connectto;
 # get_prop(gpsd, exported_config_prop)
 
 get_prop(gpsd, hwservicemanager_prop)
+get_prop(gpsd, bootanim_system_prop)
+get_prop(gpsd, secril_config_prop)
+dontaudit gpsd { default_prop radio_prop }:file r_file_perms;
+dontaudit gpsd system_data_file:dir search;
 hwbinder_use(gpsd)
+
 # allow gpsd system_suspend_hwservice:hwservice_manager { find };
 allow gpsd fwk_sensor_hwservice:hwservice_manager { find };
 

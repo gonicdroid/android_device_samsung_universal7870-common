@@ -21,3 +21,6 @@ allow hal_gnss_default fwk_sensor_hwservice:hwservice_manager find;
 
 # Vendor binder
 vndbinder_use(hal_gnss_default)
+
+dontaudit hal_gnss_default default_prop:file r_file_perms;
+

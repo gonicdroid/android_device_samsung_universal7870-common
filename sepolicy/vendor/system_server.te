@@ -49,6 +49,7 @@ allow system_server gps_data_file:file create_file_perms;
 
 # Bluetooth buildprop
 get_prop(system_server, bluetooth_prop)
+get_prop(system_server, vendor_default_prop)
 
 # Grpahics sysfs
 allow system_server sysfs_graphics:file rw_file_perms;

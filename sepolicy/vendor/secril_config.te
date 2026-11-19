@@ -12,7 +12,9 @@ allow secril_config sec_efs_file:file r_file_perms;
 
 # Set radio properties (multisim config, network mode)
 set_prop(secril_config, secril_config_prop)
-dontaudit secril_config exported3_radio_prop:property_service set;
+dontaudit secril_config radio_control_prop:property_service set;
 
 # Ignore attempt to set core default_prop directly (init mirrors it from ro.vendor.multisim.simslotcount)
 dontaudit secril_config default_prop:property_service set;
+dontaudit secril_config { default_prop radio_prop }:file r_file_perms;
+

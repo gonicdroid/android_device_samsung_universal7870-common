@@ -12,3 +12,6 @@ allow hal_bluetooth_default sysfs:file rw_file_perms;
 
 # Vendor binder
 vndbinder_use(hal_bluetooth_default)
+
+dontaudit hal_bluetooth_default default_prop:file r_file_perms;
+

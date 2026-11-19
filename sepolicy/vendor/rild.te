@@ -8,6 +8,10 @@ allow rild mif_device:chr_file rw_file_perms;
 # audio hal
 allow rild hal_audio_default:dir search;
 allow rild hal_audio_default:file r_file_perms;
+dontaudit rild default_prop:file r_file_perms;
+dontaudit rild radio_core_data_file:dir search;
+
+
 
 # gps
 allow rild gpsd:dir search;
