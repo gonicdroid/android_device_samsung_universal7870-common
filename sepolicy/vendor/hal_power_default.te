@@ -9,6 +9,7 @@ allow hal_power_default sysfs_input:file rw_file_perms;
 # CPU devices
 allow hal_power_default sysfs_devices_system_cpu:dir search;
 allow hal_power_default sysfs_devices_system_cpu:file rw_file_perms;
+allow hal_power_default cpu_dma_latency_device:chr_file rw_file_perms;
 
 # Lights
 allow hal_power_default sysfs_light:dir search;
