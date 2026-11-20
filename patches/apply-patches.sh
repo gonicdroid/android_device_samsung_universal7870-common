@@ -11,15 +11,15 @@ apply_patch() {
 
     if [ ! -d "${ROOT_DIR}/${target_dir}" ]; then
         echo "universal7870: Target directory ${target_dir} not found, skipping ${patch_name}"
-        return
+        return 0
     fi
 
     # Check if patch is already applied
-    if git -C "${ROOT_DIR}/${target_dir}" apply --reverse --check "${patch_file}" >/dev/null 2>&1; then
+    if git -C "${ROOT_DIR}/${target_dir}" apply --reverse --check --ignore-whitespace "${patch_file}" >/dev/null 2>&1; then
         echo "universal7870: Patch ${patch_name} already applied to ${target_dir}."
-    elif git -C "${ROOT_DIR}/${target_dir}" apply --check "${patch_file}" >/dev/null 2>&1; then
+    elif git -C "${ROOT_DIR}/${target_dir}" apply --check --ignore-whitespace "${patch_file}" >/dev/null 2>&1; then
         echo "universal7870: Applying patch ${patch_name} to ${target_dir}..."
-        git -C "${ROOT_DIR}/${target_dir}" apply "${patch_file}"
+        git -C "${ROOT_DIR}/${target_dir}" apply --ignore-whitespace "${patch_file}"
         if [ $? -eq 0 ]; then
             echo "universal7870: Successfully applied ${patch_name} to ${target_dir}."
         else
@@ -32,5 +32,5 @@ apply_patch() {
 
 echo "=== Checking universal7870 device tree patches ==="
 apply_patch "system/bt" "${PATCHES_DIR}/0002-system-bt-dynamic-sco-wbs-nbs.patch"
+apply_patch "packages/apps/AudioFX" "${PATCHES_DIR}/0003-packages-apps-AudioFX-disable-speaker-by-default.patch"
 echo "=================================================="
-

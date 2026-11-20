@@ -1,0 +1,23 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Brian Nahuel Gotte <bngotte@gmail.com>
+Date: Wed, 19 Nov 2026 21:55:00 -0300
+Subject: [PATCH] AudioFX: Disable speaker audio effects by default
+
+---
+ src/org/lineageos/audiofx/service/DevicePreferenceManager.java | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/org/lineageos/audiofx/service/DevicePreferenceManager.java b/src/org/lineageos/audiofx/service/DevicePreferenceManager.java
+--- a/src/org/lineageos/audiofx/service/DevicePreferenceManager.java
++++ b/src/org/lineageos/audiofx/service/DevicePreferenceManager.java
+@@ -300,7 +300,7 @@
+         // set the small speakers preset as the default
+         int idx = findInList(smallSpeakers, presetNames);
+         if (idx >= 0) {
+             speakerPrefs.edit()
+-                .putBoolean(DEVICE_AUDIOFX_GLOBAL_ENABLE, true)
++                .putBoolean(DEVICE_AUDIOFX_GLOBAL_ENABLE, false)
+                 .putString(DEVICE_AUDIOFX_EQ_PRESET, String.valueOf(idx))
+                 .commit();
+-- 
+2.34.1
