@@ -50,7 +50,7 @@
             "Name": "GPUMaxFreq",
             "Path": "/sys/devices/11400000.mali/dvfs_max_lock",
             "Values": [
-                "-1",
+                "0",
                 "1146",
                 "1001",
                 "845",
@@ -64,7 +64,7 @@
             "Name": "GPUMinFreq",
             "Path": "/sys/devices/11400000.mali/dvfs_min_lock",
             "Values": [
-                "-1",
+                "0",
                 "1146",
                 "1001",
                 "845",

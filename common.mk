@@ -27,7 +27,9 @@ $(call inherit-product, frameworks/native/build/phone-xhdpi-2048-dalvik-heap.mk)
 # Soong namespaces
 PRODUCT_SOONG_NAMESPACES += \
     $(COMMON_PATH) \
-    hardware/samsung
+    hardware/google/pixel \
+    hardware/samsung \
+    hardware/samsung/hidl/power-libperfmgr
 
 # -----------------------------------------------------------
 # 2. VINTF (Project Treble Manifests)
@@ -144,6 +146,9 @@ PRODUCT_PACKAGES += \
 
 PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/configs/powerhint.json:$(TARGET_COPY_OUT_VENDOR)/etc/powerhint.json
+
+PRODUCT_PROPERTY_OVERRIDES += \
+    vendor.powerhal.perf_profiles=3
 
 # LiveDisplay
 PRODUCT_PACKAGES += \
