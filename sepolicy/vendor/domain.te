@@ -6,3 +6,6 @@ dontaudit domain vendor_file:file { getattr read };
 
 # Silence servicemanager reading legacy vendor_service_contexts on Full Treble
 dontaudit servicemanager nonplat_service_contexts_file:file r_file_perms;
+
+# Allow coredomains and appdomains to read camera props (config.disable_cameraservice)
+get_prop({ coredomain appdomain }, exported_camera_prop)
