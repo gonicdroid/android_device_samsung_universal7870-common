@@ -38,6 +38,9 @@ PRODUCT_SOONG_NAMESPACES += \
 DEVICE_MANIFEST_FILE += $(COMMON_PATH)/manifest.xml
 DEVICE_MATRIX_FILE += $(COMMON_PATH)/compatibility_matrix.xml
 
+PRODUCT_PACKAGES += \
+    framework_compatibility_matrix.legacy.xml
+
 # -----------------------------------------------------------
 # 3. HIDL Services & Hardware Packages
 # -----------------------------------------------------------

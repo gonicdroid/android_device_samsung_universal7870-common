@@ -12,3 +12,12 @@ cc_defaults {
     name: "samsung_header_path_defaults",
     header_libs: ["samsung_device_headers"],
 }
+
+vintf_compatibility_matrix {
+    name: "framework_compatibility_matrix.legacy.xml",
+    stem: "compatibility_matrix.legacy.xml",
+    srcs: [
+        "compatibility_matrix.legacy.xml",
+    ],
+}
+
